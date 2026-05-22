@@ -42,11 +42,12 @@ const MINI_GAMES: { id: MiniGame; label: string; icon: string; desc: string; has
 
 interface Props {
   onStart: (rounds: number, difficulty: Difficulty, gameType: GameType, triviaPools?: TriviaPool[], region?: Region, streak?: boolean) => void;
+  onFeedback: () => void;
 }
 
 type Screen = 'home' | 'config';
 
-export default function HomeScreen({ onStart }: Props) {
+export default function HomeScreen({ onStart, onFeedback }: Props) {
   const [screen, setScreen] = useState<Screen>('home');
   const [selectedGame, setSelectedGame] = useState<GameType>('flag');
   const [rounds, setRounds] = useState(10);
@@ -213,6 +214,10 @@ export default function HomeScreen({ onStart }: Props) {
           </button>
         ))}
       </div>
+
+      <button className="home-feedback-nudge" onClick={onFeedback}>
+        💬 Have feedback or found a bug? Let us know
+      </button>
     </div>
   );
 }

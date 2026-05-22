@@ -137,9 +137,14 @@ export function generateTriviaQuestion(country: Country, enabledPools?: TriviaPo
     const q = build(country);
     if (q) return q;
   }
-  // Capital fallback — always works for named capital cities
   const capital = country.capital?.[0] ?? country.name.common;
   return { prompt: `What country has ${capital} as its capital city?`, category: 'Capital' };
+}
+
+/** Returns only countries that have at least one valid question in the given pools. */
+export function filterForPools(countries: Country[], enabledPools: TriviaPool[]): Country[] {
+  const active = ALL_FACTORIES.filter(f => enabledPools.includes(f.pool));
+  return countries.filter(c => active.some(({ build }) => build(c) !== null));
 }
 
 export function buildTriviaQuestions(countries: Country[], enabledPools?: TriviaPool[]): TriviaQuestion[] {

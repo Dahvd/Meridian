@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Country } from '../types/country';
 import { getAnswerOptions, shuffle } from '../helpers/countryHelpers';
-import { buildTriviaQuestions, type TriviaQuestion, type TriviaPool } from '../helpers/triviaHelpers';
+import { buildTriviaQuestions, filterForPools, type TriviaQuestion, type TriviaPool } from '../helpers/triviaHelpers';
 
 export type Guess = {
   correct: boolean;
@@ -55,10 +55,13 @@ export function useGameLogic(allCountries: Country[]) {
     region: Region = 'all',
     streakMode = false,
   ) {
-    const filtered = region === 'all'
+    const regionFiltered = region === 'all'
       ? allCountries
       : allCountries.filter(c => c.region === region);
-    const pool = shuffle([...filtered]);
+    const eligible = type === 'trivia' && pools?.length
+      ? filterForPools(regionFiltered, pools)
+      : regionFiltered;
+    const pool = shuffle([...eligible]);
     const gameRounds = streakMode ? pool.length : Math.min(rounds, pool.length);
     const questions = type === 'trivia' ? buildTriviaQuestions(pool.slice(0, gameRounds), pools) : [];
 

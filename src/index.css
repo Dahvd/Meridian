@@ -1117,6 +1117,23 @@ body {
 .feedback-bubble:hover { background: var(--accent-hover); transform: scale(1.05); }
 .feedback-bubble:active { transform: scale(0.95); }
 
+.home-feedback-nudge {
+  margin-top: 24px;
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.home-feedback-nudge:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .feedback-panel {
   position: fixed;
   bottom: 78px;
@@ -1164,6 +1181,16 @@ body {
 }
 .feedback-submit:hover:not(:disabled) { background: var(--accent-hover); }
 .feedback-submit:disabled { opacity: 0.5; cursor: default; }
+.feedback-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: center;
+  padding: 4px;
+}
+.feedback-close:hover { color: var(--text); }
 
 @media (max-width: 540px) {
   .card { padding: 24px 20px; }

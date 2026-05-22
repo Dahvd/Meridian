@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useFetchRandomizedCountries } from './hooks/useFetchRandomizedCountries';
 import { useGameLogic } from './hooks/useGameLogic';
 import HomeScreen from './components/HomeScreen';
@@ -14,6 +15,7 @@ import Results from './components/Results';
 import FeedbackWidget from './components/FeedbackWidget';
 
 export default function App() {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { countries } = useFetchRandomizedCountries();
   const {
     gameState,
@@ -36,7 +38,7 @@ export default function App() {
   return (
     <div className="app">
       {gameState === 'home' && (
-        <HomeScreen onStart={startGame} />
+        <HomeScreen onStart={startGame} onFeedback={() => setFeedbackOpen(true)} />
       )}
 
       {gameState === 'playing' && currentCountry && (
@@ -146,7 +148,7 @@ export default function App() {
           onGoHome={goHome}
         />
       )}
-      <FeedbackWidget />
+      <FeedbackWidget open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </div>
   );
 }
