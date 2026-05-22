@@ -37,7 +37,7 @@ export default function SilhouetteGame({ country, options, currentRound, totalRo
   const progress = ((currentRound + 1) / totalRounds) * 100;
 
   useEffect(() => {
-    fetch('/countries.geojson').then(r => r.json()).then(setGeoData);
+    fetch(`${import.meta.env.BASE_URL}countries.geojson`).then(r => r.json()).then(setGeoData);
   }, []);
 
   useEffect(() => {

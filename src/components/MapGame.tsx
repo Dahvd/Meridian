@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
+import { MapContainer, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Country } from '../types/country';
@@ -67,7 +67,7 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
   const progress = ((currentRound + 1) / totalRounds) * 100;
 
   useEffect(() => {
-    fetch('/countries.geojson').then(r => r.json()).then(setGeoData);
+    fetch(`${import.meta.env.BASE_URL}countries.geojson`).then(r => r.json()).then(setGeoData);
   }, []);
 
   // Reset per round
@@ -133,11 +133,6 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
           scrollWheelZoom={true}
           worldCopyJump={false}
         >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            opacity={0.4}
-          />
           {geoData && (
             <GeoJSON
               ref={geoLayerRef}

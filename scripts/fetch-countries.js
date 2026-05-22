@@ -8,19 +8,22 @@ import { writeFileSync } from 'fs';
 const FIELDS = 'name,flags,cca2,region,capital,population,currencies,languages,tld,idd';
 
 console.log('Fetching country data...');
-const [res1, res2] = await Promise.all([
+const [res1, res2, res3] = await Promise.all([
   fetch(`https://restcountries.com/v3.1/all?fields=${FIELDS}`),
   fetch(`https://restcountries.com/v3.1/all?fields=cca2,area`),
+  fetch(`https://restcountries.com/v3.1/all?fields=cca2,latlng`),
 ]);
 if (!res1.ok) throw new Error(`API error: ${res1.status}`);
 if (!res2.ok) throw new Error(`API error (area): ${res2.status}`);
+if (!res3.ok) throw new Error(`API error (latlng): ${res3.status}`);
 
-const [data, areaData] = await Promise.all([res1.json(), res2.json()]);
+const [data, areaData, latlngData] = await Promise.all([res1.json(), res2.json(), res3.json()]);
 const areaMap = new Map(areaData.map(c => [c.cca2, c.area ?? null]));
+const latlngMap = new Map(latlngData.map(c => [c.cca2, c.latlng ?? null]));
 
 const valid = data
   .filter(c => c.flags?.svg && c.name?.common)
-  .map(c => ({ ...c, area: areaMap.get(c.cca2) ?? null }))
+  .map(c => ({ ...c, area: areaMap.get(c.cca2) ?? null, latlng: latlngMap.get(c.cca2) ?? null }))
   .sort((a, b) => a.name.common.localeCompare(b.name.common));
 
 writeFileSync('src/data/countries.json', JSON.stringify(valid));

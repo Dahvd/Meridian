@@ -62,7 +62,7 @@ export function useGameLogic(allCountries: Country[]) {
       ? filterForPools(regionFiltered, pools)
       : regionFiltered;
     const pool = shuffle([...eligible]);
-    const gameRounds = streakMode ? pool.length : Math.min(rounds, pool.length);
+    const gameRounds = type === 'progressive' ? 1 : streakMode ? pool.length : Math.min(rounds, pool.length);
     const questions = type === 'trivia' ? buildTriviaQuestions(pool.slice(0, gameRounds), pools) : [];
 
     setLastSettings({ rounds, diff, type, pools, region, streak: streakMode });

@@ -80,11 +80,12 @@ interface Props {
 
 export default function OddOneOutGame({ country, pool, currentRound, totalRounds, onGuess, onGiveUp }: Props) {
   const [selected, setSelected] = useState<Country | null>(null);
+  const [hintShown, setHintShown] = useState(false);
   const progress = ((currentRound + 1) / totalRounds) * 100;
 
   const group = useMemo(() => buildGroup(country, pool), [country.cca2]);
 
-  useEffect(() => { setSelected(null); }, [country.cca2]);
+  useEffect(() => { setSelected(null); setHintShown(false); }, [country.cca2]);
 
   function handlePick(opt: Country) {
     if (selected || !group) return;
@@ -131,8 +132,11 @@ export default function OddOneOutGame({ country, pool, currentRound, totalRounds
           </button>
         ))}
       </div>
-      {selected && (
+      {(selected || hintShown) && (
         <p className="map-question" style={{ marginTop: 16, fontSize: '0.85rem' }}>{group.sharedLabel}</p>
+      )}
+      {!selected && !hintShown && (
+        <button className="hint-btn" onClick={() => setHintShown(true)}>Show hint</button>
       )}
     </div>
   );

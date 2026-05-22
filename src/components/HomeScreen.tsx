@@ -92,7 +92,7 @@ export default function HomeScreen({ onStart, onFeedback }: Props) {
   const gameDef = miniDef ?? classicDef;
 
   const showDifficulty = selectedGame !== 'map' && selectedGame !== 'flag-grid' && selectedGame !== 'higher-or-lower' && selectedGame !== 'odd-one-out' && selectedGame !== 'progressive' && selectedGame !== 'memory';
-  const showRounds = selectedGame !== 'memory';
+  const showRounds = selectedGame !== 'memory' && selectedGame !== 'progressive';
   const showStreak = selectedGame === 'flag' || selectedGame === 'trivia';
   const showRegion = selectedGame !== 'silhouette' && selectedGame !== 'memory';
 

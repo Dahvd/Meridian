@@ -18,10 +18,11 @@ function getMatches(query: string): Country[] {
 
 interface Props {
   correctCountry: Country;
-  onGuess: (country: Country) => void; // hintUsed is handled by the parent
+  onGuess: (country: Country) => void;
+  showReveal?: boolean;
 }
 
-export default function SearchInput({ correctCountry, onGuess }: Props) {
+export default function SearchInput({ correctCountry, onGuess, showReveal = true }: Props) {
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState<Country[]>([]);
   const [highlighted, setHighlighted] = useState(0);
@@ -103,7 +104,7 @@ export default function SearchInput({ correctCountry, onGuess }: Props) {
         </ul>
       )}
 
-      {guessed && !isCorrect && (
+      {showReveal && guessed && !isCorrect && (
         <p className="search-reveal">
           Answer: <strong>{correctCountry.name.common}</strong>
         </p>
