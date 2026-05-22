@@ -1,0 +1,23 @@
+export type Country = {
+  name: {
+    common: string;
+    official: string;
+  };
+  flags: {
+    png: string;
+    svg: string;
+    alt?: string;
+  };
+  cca2: string;
+  region: string;
+  capital: string[];
+  population: number;
+  currencies: Record<string, { name: string; symbol: string }>;
+  languages: Record<string, string>;
+  tld: string[];
+  idd: {
+    root: string;
+    suffixes: string[];
+  };
+  area: number | null;
+};
