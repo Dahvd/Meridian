@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNextStep } from '../hooks/useNextStep';
 import type { Country } from '../types/country';
 import { shuffle } from '../helpers/countryHelpers';
 import countriesData from '../data/countries.json';
@@ -81,20 +82,18 @@ interface Props {
 export default function OddOneOutGame({ country, pool, currentRound, totalRounds, onGuess, onGiveUp }: Props) {
   const [selected, setSelected] = useState<Country | null>(null);
   const [hintShown, setHintShown] = useState(false);
+  const { autoNext, toggle, nextAction, schedule, reset } = useNextStep();
   const progress = ((currentRound + 1) / totalRounds) * 100;
 
   const group = useMemo(() => buildGroup(country, pool), [country.cca2]);
 
-  useEffect(() => { setSelected(null); setHintShown(false); }, [country.cca2]);
+  useEffect(() => { setSelected(null); setHintShown(false); reset(); }, [country.cca2]);
 
   function handlePick(opt: Country) {
     if (selected || !group) return;
     setSelected(opt);
-    // onGuess compares selected.cca2 === answer.cca2 (answer = seed/country)
-    // Correct pick = oddOne → pass country (matches answer) → marked correct
-    // Wrong pick = not oddOne → pass opt (doesn't match answer) → marked incorrect
     const toPass = opt.cca2 === group.oddOne.cca2 ? country : opt;
-    setTimeout(() => onGuess(toPass), 1100);
+    schedule(1100, () => onGuess(toPass));
   }
 
   function cellClass(opt: Country) {
@@ -138,6 +137,13 @@ export default function OddOneOutGame({ country, pool, currentRound, totalRounds
       {!selected && !hintShown && (
         <button className="hint-btn" onClick={() => setHintShown(true)}>Show hint</button>
       )}
+      <div className="game-footer">
+        <label className="auto-label">
+          <input type="checkbox" checked={autoNext} onChange={toggle} />
+          Auto continue
+        </label>
+        <button className="next-btn" onClick={nextAction ?? undefined} disabled={!nextAction || autoNext}>Next →</button>
+      </div>
     </div>
   );
 }

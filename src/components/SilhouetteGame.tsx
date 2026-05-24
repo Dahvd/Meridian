@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Country } from '../types/country';
 import type { Difficulty } from '../hooks/useGameLogic';
+import { useNextStep } from '../hooks/useNextStep';
 import SearchInput from './SearchInput';
 
 type GeoFeature = GeoJSON.Feature<GeoJSON.Geometry, { ISO_A2: string; ISO_A2_EH: string }>;
@@ -32,6 +33,7 @@ export default function SilhouetteGame({ country, options, currentRound, totalRo
   const [selected, setSelected] = useState<Country | null>(null);
   const [hintRevealed, setHintRevealed] = useState(false);
   const [searchCommitted, setSearchCommitted] = useState(false);
+  const { autoNext, toggle, nextAction, schedule, reset } = useNextStep();
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.GeoJSON | null>(null);
   const progress = ((currentRound + 1) / totalRounds) * 100;
@@ -44,16 +46,18 @@ export default function SilhouetteGame({ country, options, currentRound, totalRo
     setSelected(null);
     setHintRevealed(false);
     setSearchCommitted(false);
+    reset();
   }, [country.cca2]);
 
-  // Fit map to target country when data or country changes
+  // Auto-skip countries with no GeoJSON feature (not penalised)
   useEffect(() => {
-    if (!geoData || !mapRef.current) return;
-    const feature = geoData.features.find(f => getISO(f as GeoFeature) === country.cca2);
-    if (!feature) return;
-    const layer = L.geoJSON(feature as GeoJSON.GeoJsonObject);
+    if (!geoData) return;
+    const hasFeature = geoData.features.some(f => getISO(f as GeoFeature) === country.cca2);
+    if (!hasFeature) { onGuess(country); return; }
+    if (!mapRef.current) return;
+    const layer = L.geoJSON(geoData.features.find(f => getISO(f as GeoFeature) === country.cca2) as GeoJSON.GeoJsonObject);
     mapRef.current.fitBounds(layer.getBounds().pad(0.3));
-  }, [geoData, country.cca2]);
+  }, [geoData, country.cca2]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handlePick(opt: Country, hintUsed?: boolean) {
     if (selected) return;
@@ -66,7 +70,7 @@ export default function SilhouetteGame({ country, options, currentRound, totalRo
         return { fillOpacity: 0, opacity: 0 };
       });
     }
-    setTimeout(() => onGuess(opt, hintUsed), 1200);
+    schedule(1200, () => onGuess(opt, hintUsed));
   }
 
   function getButtonClass(opt: Country) {
@@ -140,6 +144,13 @@ export default function SilhouetteGame({ country, options, currentRound, totalRo
           ))}
         </div>
       )}
+      <div className="game-footer">
+        <label className="auto-label">
+          <input type="checkbox" checked={autoNext} onChange={toggle} />
+          Auto continue
+        </label>
+        <button className="next-btn" onClick={nextAction ?? undefined} disabled={!nextAction || autoNext}>Next →</button>
+      </div>
     </div>
   );
 }

@@ -6,11 +6,11 @@ const ALL_COUNTRIES = (countriesData as unknown as Country[]).sort((a, b) =>
   a.name.common.localeCompare(b.name.common)
 );
 
-function getMatches(query: string): Country[] {
+function getMatches(query: string, source: Country[]): Country[] {
   if (!query.trim()) return [];
   const q = query.toLowerCase();
-  const starts = ALL_COUNTRIES.filter(c => c.name.common.toLowerCase().startsWith(q));
-  const contains = ALL_COUNTRIES.filter(
+  const starts = source.filter(c => c.name.common.toLowerCase().startsWith(q));
+  const contains = source.filter(
     c => !c.name.common.toLowerCase().startsWith(q) && c.name.common.toLowerCase().includes(q)
   );
   return [...starts, ...contains].slice(0, 8);
@@ -20,9 +20,13 @@ interface Props {
   correctCountry: Country;
   onGuess: (country: Country) => void;
   showReveal?: boolean;
+  delay?: number;
+  exclude?: Set<string>;
+  pool?: Country[];
 }
 
-export default function SearchInput({ correctCountry, onGuess, showReveal = true }: Props) {
+export default function SearchInput({ correctCountry, onGuess, showReveal = true, delay = 900, exclude, pool }: Props) {
+  const searchSource = pool ?? ALL_COUNTRIES;
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState<Country[]>([]);
   const [highlighted, setHighlighted] = useState(0);
@@ -40,16 +44,18 @@ export default function SearchInput({ correctCountry, onGuess, showReveal = true
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
     setQuery(val);
-    setMatches(getMatches(val));
+    const results = getMatches(val, searchSource).filter(c => !exclude?.has(c.cca2));
+    setMatches(results);
     setHighlighted(0);
   }
 
   function commit(country: Country) {
     if (guessed) return;
+    if (delay === 0) { onGuess(country); return; }
     setGuessed(country);
     setMatches([]);
     setQuery(country.name.common);
-    setTimeout(() => onGuess(country), 900);
+    setTimeout(() => onGuess(country), delay);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {

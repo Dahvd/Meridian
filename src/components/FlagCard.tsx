@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Country } from '../types/country';
 import type { Difficulty } from '../hooks/useGameLogic';
+import { useNextStep } from '../hooks/useNextStep';
 import SearchInput from './SearchInput';
 
 interface Props {
@@ -9,27 +10,29 @@ interface Props {
   currentRound: number;
   totalRounds: number;
   difficulty: Difficulty;
-  streak: boolean;
+  endless: boolean;
   onGuess: (country: Country, hintUsed?: boolean) => void;
   onGiveUp: () => void;
 }
 
-export default function FlagCard({ country, options, currentRound, totalRounds, difficulty, streak, onGuess, onGiveUp }: Props) {
+export default function FlagCard({ country, options, currentRound, totalRounds, difficulty, endless, onGuess, onGiveUp }: Props) {
   const [selected, setSelected] = useState<Country | null>(null);
   const [hintRevealed, setHintRevealed] = useState(false);
   const [searchCommitted, setSearchCommitted] = useState(false);
+  const { autoNext, toggle, nextAction, schedule, reset } = useNextStep();
   const progress = ((currentRound + 1) / totalRounds) * 100;
 
   useEffect(() => {
     setSelected(null);
     setHintRevealed(false);
     setSearchCommitted(false);
+    reset();
   }, [country]);
 
   function handleClick(opt: Country) {
     if (selected) return;
     setSelected(opt);
-    setTimeout(() => onGuess(opt, hintRevealed), 900);
+    schedule(900, () => onGuess(opt, hintRevealed));
   }
 
   function getButtonClass(opt: Country) {
@@ -45,7 +48,7 @@ export default function FlagCard({ country, options, currentRound, totalRounds, 
   return (
     <div className="card">
       <div className="progress-header">
-        <span className="round-label">{streak ? `Streak: ${currentRound}` : `Round ${currentRound + 1} of ${totalRounds}`}</span>
+        <span className="round-label">{endless ? `Round ${currentRound + 1}` : `Round ${currentRound + 1} of ${totalRounds}`}</span>
         <button className="give-up-btn" onClick={onGiveUp}>Give up</button>
       </div>
       <div className="progress-bar-track">
@@ -87,6 +90,13 @@ export default function FlagCard({ country, options, currentRound, totalRounds, 
           ))}
         </div>
       )}
+      <div className="game-footer">
+        <label className="auto-label">
+          <input type="checkbox" checked={autoNext} onChange={toggle} />
+          Auto continue
+        </label>
+        <button className="next-btn" onClick={nextAction ?? undefined} disabled={!nextAction || autoNext}>Next →</button>
+      </div>
     </div>
   );
 }

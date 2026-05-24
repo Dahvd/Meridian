@@ -21,4 +21,5 @@ export type Country = {
   };
   area: number | null;
   latlng: [number, number] | null;
+  borders: string[];
 };

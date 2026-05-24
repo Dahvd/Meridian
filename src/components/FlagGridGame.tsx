@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Country } from '../types/country';
 import { shuffle } from '../helpers/countryHelpers';
+import { useNextStep } from '../hooks/useNextStep';
 import countriesData from '../data/countries.json';
 
 const FALLBACK = countriesData as unknown as Country[];
@@ -17,11 +18,12 @@ interface Props {
 export default function FlagGridGame({ country, pool, currentRound, totalRounds, onGuess, onGiveUp }: Props) {
   const [selected, setSelected] = useState<Country | null>(null);
   const [grid, setGrid] = useState<Country[]>([]);
+  const { autoNext, toggle, nextAction, schedule, reset } = useNextStep();
   const progress = ((currentRound + 1) / totalRounds) * 100;
 
   useEffect(() => {
     setSelected(null);
-    // 9-item grid: correct + 8 distractors from the same filtered pool (or fallback to all)
+    reset();
     const source = pool.length >= 9 ? pool : FALLBACK;
     const distractors = shuffle(source.filter(c => c.cca2 !== country.cca2)).slice(0, 8);
     setGrid(shuffle([country, ...distractors]));
@@ -30,7 +32,7 @@ export default function FlagGridGame({ country, pool, currentRound, totalRounds,
   function handleClick(opt: Country) {
     if (selected) return;
     setSelected(opt);
-    setTimeout(() => onGuess(opt), 1000);
+    schedule(1000, () => onGuess(opt));
   }
 
   function cellClass(opt: Country) {
@@ -58,6 +60,13 @@ export default function FlagGridGame({ country, pool, currentRound, totalRounds,
             <img src={opt.flags.svg} alt="" className="grid-flag-img" />
           </button>
         ))}
+      </div>
+      <div className="game-footer">
+        <label className="auto-label">
+          <input type="checkbox" checked={autoNext} onChange={toggle} />
+          Auto continue
+        </label>
+        <button className="next-btn" onClick={nextAction ?? undefined} disabled={!nextAction || autoNext}>Next →</button>
       </div>
     </div>
   );

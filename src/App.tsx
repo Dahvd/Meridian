@@ -25,7 +25,7 @@ export default function App() {
     currentRound,
     options,
     guesses,
-    streak,
+    endless,
     pool,
     currentCountry,
     currentTriviaQuestion,
@@ -33,6 +33,7 @@ export default function App() {
     handleGuess,
     playAgain,
     goHome,
+    giveUp,
   } = useGameLogic(countries);
 
   return (
@@ -42,7 +43,8 @@ export default function App() {
       )}
 
       {gameState === 'playing' && currentCountry && (
-        <>
+        <div className="game-container">
+          <button className="back-home-btn" onClick={goHome}>⌂</button>
           {gameType === 'flag' && options.length > 0 && (
             <FlagCard
               country={currentCountry}
@@ -50,9 +52,9 @@ export default function App() {
               currentRound={currentRound}
               totalRounds={totalRounds}
               difficulty={difficulty}
-              streak={streak}
+              endless={endless}
               onGuess={handleGuess}
-              onGiveUp={goHome}
+              onGiveUp={giveUp}
             />
           )}
           {gameType === 'trivia' && currentTriviaQuestion && options.length > 0 && (
@@ -63,9 +65,9 @@ export default function App() {
               currentRound={currentRound}
               totalRounds={totalRounds}
               difficulty={difficulty}
-              streak={streak}
+              endless={endless}
               onGuess={handleGuess}
-              onGiveUp={goHome}
+              onGiveUp={giveUp}
             />
           )}
           {gameType === 'map' && (
@@ -75,7 +77,7 @@ export default function App() {
               totalRounds={totalRounds}
               difficulty={difficulty}
               onGuess={handleGuess}
-              onGiveUp={goHome}
+              onGiveUp={giveUp}
             />
           )}
           {gameType === 'flag-grid' && (
@@ -85,7 +87,7 @@ export default function App() {
               currentRound={currentRound}
               totalRounds={totalRounds}
               onGuess={handleGuess}
-              onGiveUp={goHome}
+              onGiveUp={giveUp}
             />
           )}
           {gameType === 'higher-or-lower' && (
@@ -95,7 +97,7 @@ export default function App() {
               currentRound={currentRound}
               totalRounds={totalRounds}
               onGuess={handleGuess}
-              onGiveUp={goHome}
+              onGiveUp={giveUp}
             />
           )}
           {gameType === 'silhouette' && (
@@ -106,7 +108,7 @@ export default function App() {
               totalRounds={totalRounds}
               difficulty={difficulty}
               onGuess={handleGuess}
-              onGiveUp={goHome}
+              onGiveUp={giveUp}
             />
           )}
           {gameType === 'odd-one-out' && (
@@ -116,26 +118,27 @@ export default function App() {
               currentRound={currentRound}
               totalRounds={totalRounds}
               onGuess={handleGuess}
-              onGiveUp={goHome}
+              onGiveUp={giveUp}
             />
           )}
           {gameType === 'progressive' && options.length > 0 && (
             <ProgressiveGame
               country={currentCountry}
               options={options}
+              pool={pool}
               currentRound={currentRound}
               totalRounds={totalRounds}
               onGuess={handleGuess}
-              onGiveUp={goHome}
+              onGiveUp={giveUp}
             />
           )}
           {gameType === 'memory' && (
             <MemoryGame
               onFinish={() => goHome()}
-              onGiveUp={goHome}
+              onGiveUp={() => giveUp()}
             />
           )}
-        </>
+        </div>
       )}
 
       {gameState === 'results' && (
@@ -143,7 +146,7 @@ export default function App() {
           guesses={guesses}
           totalRounds={totalRounds}
           gameType={gameType}
-          streak={streak}
+          endless={endless}
           onPlayAgain={playAgain}
           onGoHome={goHome}
         />

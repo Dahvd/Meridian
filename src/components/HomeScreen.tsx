@@ -41,7 +41,7 @@ const MINI_GAMES: { id: MiniGame; label: string; icon: string; desc: string; has
 ];
 
 interface Props {
-  onStart: (rounds: number, difficulty: Difficulty, gameType: GameType, triviaPools?: TriviaPool[], region?: Region, streak?: boolean) => void;
+  onStart: (rounds: number, difficulty: Difficulty, gameType: GameType, triviaPools?: TriviaPool[], region?: Region, endless?: boolean, minPop?: number) => void;
   onFeedback: () => void;
 }
 
@@ -53,7 +53,8 @@ export default function HomeScreen({ onStart, onFeedback }: Props) {
   const [rounds, setRounds] = useState(10);
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [region, setRegion] = useState<Region>('all');
-  const [streak, setStreak] = useState(false);
+  const [endless, setEndless] = useState(false);
+  const [minPop, setMinPop] = useState(0);
   const [triviaPools, setTriviaPools] = useState<Set<TriviaPool>>(
     new Set(TRIVIA_POOLS.map(p => p.id))
   );
@@ -83,7 +84,8 @@ export default function HomeScreen({ onStart, onFeedback }: Props) {
       selectedGame,
       selectedGame === 'trivia' ? [...triviaPools] : undefined,
       region,
-      streak,
+      endless,
+      selectedGame === 'progressive' ? minPop : 0,
     );
   }
 
@@ -93,13 +95,13 @@ export default function HomeScreen({ onStart, onFeedback }: Props) {
 
   const showDifficulty = selectedGame !== 'map' && selectedGame !== 'flag-grid' && selectedGame !== 'higher-or-lower' && selectedGame !== 'odd-one-out' && selectedGame !== 'progressive' && selectedGame !== 'memory';
   const showRounds = selectedGame !== 'memory' && selectedGame !== 'progressive';
-  const showStreak = selectedGame === 'flag' || selectedGame === 'trivia';
+  const showEndless = selectedGame === 'flag' || selectedGame === 'trivia';
   const showRegion = selectedGame !== 'silhouette' && selectedGame !== 'memory';
 
   if (screen === 'config') {
     return (
       <div className="card">
-        <button className="back-btn" onClick={() => setScreen('home')}>← Back</button>
+        <button className="back-btn" onClick={() => setScreen('home')}>←</button>
         <div className="config-game-label">
           <span className="config-game-icon">{gameDef?.icon}</span>
           <h2 className="config-game-title">{gameDef?.label}</h2>
@@ -167,16 +169,33 @@ export default function HomeScreen({ onStart, onFeedback }: Props) {
           </>
         )}
 
-        {showStreak && (
+        {selectedGame === 'progressive' && (
+          <>
+            <p className="round-label-sm">Country pool</p>
+            <div className="round-options">
+              {([0, 500_000, 1_000_000] as const).map(n => (
+                <button
+                  key={n}
+                  className={`round-btn${minPop === n ? ' selected' : ''}`}
+                  onClick={() => setMinPop(n)}
+                >
+                  {n === 0 ? 'All' : n === 500_000 ? '500K+' : '1M+'}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {showEndless && (
           <div className="streak-toggle-row">
             <label className="streak-label">
               <input
                 type="checkbox"
-                checked={streak}
-                onChange={e => setStreak(e.target.checked)}
+                checked={endless}
+                onChange={e => setEndless(e.target.checked)}
                 className="streak-checkbox"
               />
-              <span className="streak-label-text">Streak mode — one wrong ends the run</span>
+              <span className="streak-label-text">Endless — play through all countries, give up whenever</span>
             </label>
           </div>
         )}
@@ -216,7 +235,7 @@ export default function HomeScreen({ onStart, onFeedback }: Props) {
       </div>
 
       <button className="home-feedback-nudge" onClick={onFeedback}>
-        💬 Have feedback or found a bug? Let us know
+        💬 Have feedback or found a bug? Let me know
       </button>
     </div>
   );

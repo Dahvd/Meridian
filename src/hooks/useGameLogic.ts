@@ -24,7 +24,8 @@ type LastSettings = {
   type: GameType;
   pools?: TriviaPool[];
   region: Region;
-  streak: boolean;
+  endless: boolean;
+  minPop: number;
 };
 
 export function useGameLogic(allCountries: Country[]) {
@@ -39,7 +40,7 @@ export function useGameLogic(allCountries: Country[]) {
   const [triviaQuestions, setTriviaQuestions] = useState<TriviaQuestion[]>([]);
   const [lastSettings, setLastSettings] = useState<LastSettings | null>(null);
   const [countries, setCountries] = useState<Country[]>([]);
-  const [streak, setStreak] = useState(false);
+  const [endless, setEndless] = useState(false);
 
   useEffect(() => {
     if (gameState === 'playing' && countries.length > 0) {
@@ -53,19 +54,21 @@ export function useGameLogic(allCountries: Country[]) {
     type: GameType,
     pools?: TriviaPool[],
     region: Region = 'all',
-    streakMode = false,
+    endlessMode = false,
+    minPop = 0,
   ) {
     const regionFiltered = region === 'all'
       ? allCountries
       : allCountries.filter(c => c.region === region);
+    const popFiltered = minPop > 0 ? regionFiltered.filter(c => c.population >= minPop) : regionFiltered;
     const eligible = type === 'trivia' && pools?.length
-      ? filterForPools(regionFiltered, pools)
-      : regionFiltered;
+      ? filterForPools(popFiltered, pools)
+      : popFiltered;
     const pool = shuffle([...eligible]);
-    const gameRounds = type === 'progressive' ? 1 : streakMode ? pool.length : Math.min(rounds, pool.length);
+    const gameRounds = type === 'progressive' ? 1 : endlessMode ? pool.length : Math.min(rounds, pool.length);
     const questions = type === 'trivia' ? buildTriviaQuestions(pool.slice(0, gameRounds), pools) : [];
 
-    setLastSettings({ rounds, diff, type, pools, region, streak: streakMode });
+    setLastSettings({ rounds, diff, type, pools, region, endless: endlessMode, minPop });
     setTotalRounds(gameRounds);
     setDifficulty(diff);
     setGameType(type);
@@ -74,14 +77,14 @@ export function useGameLogic(allCountries: Country[]) {
     setGuesses([]);
     setTriviaQuestions(questions);
     setCountries(pool);
-    setStreak(streakMode);
+    setEndless(endlessMode);
     setGameState('playing');
   }
 
   function playAgain() {
     if (!lastSettings) { setGameState('home'); return; }
-    const { rounds, diff, type, pools, region, streak: s } = lastSettings;
-    startGame(rounds, diff, type, pools, region, s);
+    const { rounds, diff, type, pools, region, endless: e, minPop } = lastSettings;
+    startGame(rounds, diff, type, pools, region, e, minPop);
   }
 
   function handleGuess(selected: Country, hintUsed?: boolean) {
@@ -92,9 +95,8 @@ export function useGameLogic(allCountries: Country[]) {
     setGuesses(newGuesses);
 
     const isLastRound = currentRound + 1 === totalRounds;
-    const streakOver = streak && !correct;
 
-    if (isLastRound || streakOver) {
+    if (isLastRound) {
       setGameState('results');
     } else {
       setCurrentRound(r => r + 1);
@@ -106,6 +108,14 @@ export function useGameLogic(allCountries: Country[]) {
     setGameState('home');
   }
 
+  function giveUp() {
+    if (guesses.length > 0) {
+      setGameState('results');
+    } else {
+      setGameState('home');
+    }
+  }
+
   return {
     gameState,
     gameType,
@@ -114,7 +124,7 @@ export function useGameLogic(allCountries: Country[]) {
     currentRound,
     options,
     guesses,
-    streak,
+    endless,
     pool: countries,
     currentCountry: countries[countryIndex] ?? null,
     currentTriviaQuestion: triviaQuestions[currentRound] ?? null,
@@ -122,5 +132,6 @@ export function useGameLogic(allCountries: Country[]) {
     handleGuess: handleGuess as (selected: Country, hintUsed?: boolean) => void,
     playAgain,
     goHome,
+    giveUp,
   };
 }

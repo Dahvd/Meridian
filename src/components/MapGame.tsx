@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNextStep } from '../hooks/useNextStep';
 import { MapContainer, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -62,9 +63,11 @@ interface Props {
 
 export default function MapGame({ country, currentRound, totalRounds, onGuess, onGiveUp }: Props) {
   const [geoData, setGeoData] = useState<GeoJSON.FeatureCollection | null>(null);
+  const [answered, setAnswered] = useState(false);
   const geoLayerRef = useRef<L.GeoJSON | null>(null);
   const guessedRef = useRef<string | null>(null);
   const layersRef = useRef<Map<string, L.Layer>>(new Map());
+  const { autoNext, toggle, nextAction, schedule, reset } = useNextStep();
   const progress = ((currentRound + 1) / totalRounds) * 100;
 
   useEffect(() => {
@@ -74,6 +77,8 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
   // Reset per round
   useEffect(() => {
     guessedRef.current = null;
+    setAnswered(false);
+    reset();
     if (geoLayerRef.current) {
       geoLayerRef.current.setStyle(() => STYLE_DEFAULT);
     }
@@ -85,6 +90,7 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
     if (!iso || iso === '-99') return;
 
     guessedRef.current = iso;
+    setAnswered(true);
 
     // Update styles immediately via Leaflet (no React re-render needed)
     if (geoLayerRef.current) {
@@ -107,7 +113,7 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
       }
     }
 
-    setTimeout(() => onGuess(selected as Country), 1400);
+    schedule(1400, () => onGuess(selected as Country));
   }
 
   function onEachFeature(feature: GeoFeature, layer: L.Layer) {
@@ -164,6 +170,13 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
             />
           )}
         </MapContainer>
+      </div>
+      <div className="game-footer">
+        <label className="auto-label">
+          <input type="checkbox" checked={autoNext} onChange={toggle} />
+          Auto continue
+        </label>
+        <button className="next-btn" onClick={nextAction ?? undefined} disabled={!nextAction || autoNext}>Next →</button>
       </div>
     </div>
   );

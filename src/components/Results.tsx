@@ -4,7 +4,7 @@ interface Props {
   guesses: Guess[];
   totalRounds?: number;
   gameType: GameType;
-  streak: boolean;
+  endless: boolean;
   onPlayAgain: () => void;
   onGoHome: () => void;
 }
@@ -28,7 +28,7 @@ const GAME_LABELS: Record<GameType, string> = {
   'memory': 'Memory',
 };
 
-export default function Results({ guesses, gameType, streak, onPlayAgain, onGoHome }: Props) {
+export default function Results({ guesses, gameType, endless, onPlayAgain, onGoHome }: Props) {
   const correctCount = guesses.filter(g => g.correct).length;
   const played = guesses.length;
   const pct = played > 0 ? Math.round((correctCount / played) * 100) : 0;
@@ -36,14 +36,14 @@ export default function Results({ guesses, gameType, streak, onPlayAgain, onGoHo
   return (
     <div className="card">
       <div className="results-header">
-        <h2 className="results-title">{GAME_LABELS[gameType]}{streak ? ' · Streak' : ''}</h2>
+        <h2 className="results-title">{GAME_LABELS[gameType]}{endless ? ' · Endless' : ''}</h2>
         <div className="results-score" style={{ color: scoreColor(pct) }}>
           {correctCount}<span className="results-total">/{played}</span>
         </div>
         <p className="results-pct">{pct}% correct</p>
-        {streak && (
+        {endless && (
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            Streak ended on round {played}
+            Gave up after {played} {played === 1 ? 'round' : 'rounds'}
           </p>
         )}
       </div>
