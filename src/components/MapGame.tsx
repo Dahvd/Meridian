@@ -64,6 +64,7 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
   const [geoData, setGeoData] = useState<GeoJSON.FeatureCollection | null>(null);
   const geoLayerRef = useRef<L.GeoJSON | null>(null);
   const guessedRef = useRef<string | null>(null);
+  const layersRef = useRef<Map<string, L.Layer>>(new Map());
   const progress = ((currentRound + 1) / totalRounds) * 100;
 
   useEffect(() => {
@@ -93,10 +94,25 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
     }
 
     const selected = BY_CCA2.get(iso) ?? { ...country, cca2: iso, name: { common: feature.properties.NAME, official: feature.properties.NAME } };
+
+    // Show name label on the wrong-guessed country
+    if (iso !== country.cca2) {
+      const guessedLayer = layersRef.current.get(iso);
+      if (guessedLayer) {
+        (guessedLayer as L.Path).bindTooltip(selected.name.common, {
+          permanent: true,
+          className: 'map-tooltip',
+          direction: 'center',
+        }).openTooltip();
+      }
+    }
+
     setTimeout(() => onGuess(selected as Country), 1400);
   }
 
   function onEachFeature(feature: GeoFeature, layer: L.Layer) {
+    const iso = getISO(feature);
+    if (iso) layersRef.current.set(iso, layer);
     const path = layer as L.Path;
     path.on({
       click: () => handleFeatureClick(feature),
@@ -107,7 +123,6 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
         if (!guessedRef.current) path.setStyle(STYLE_DEFAULT);
       },
     });
-    // No country name tooltips — part of the challenge
   }
 
   return (
@@ -132,6 +147,8 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
           zoomControl={true}
           scrollWheelZoom={true}
           worldCopyJump={false}
+          maxBounds={[[-90, -180], [90, 180]]}
+          maxBoundsViscosity={1.0}
         >
           {geoData && (
             <GeoJSON
