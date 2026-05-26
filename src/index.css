@@ -514,6 +514,21 @@ body {
 .leaflet-control-zoom a:hover {
   background: var(--surface-hover) !important;
 }
+.leaflet-fullscreen-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+.leaflet-fullscreen-btn:hover {
+  background: var(--surface-hover) !important;
+}
+.leaflet-container:fullscreen {
+  width: 100vw !important;
+  height: 100vh !important;
+}
 
 /* Handoff screen */
 .handoff-card {

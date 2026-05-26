@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNextStep } from '../hooks/useNextStep';
-import { MapContainer, GeoJSON } from 'react-leaflet';
+import { MapContainer, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Country } from '../types/country';
@@ -45,6 +45,50 @@ const STYLE_DIMMED: L.PathOptions = {
   fillColor: '#d4c5a9', fillOpacity: 0.2, color: '#9e8060', weight: 0.5,
 };
 
+const EXPAND_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M1 1h5v1.5H2.5V5H1V1zm9 0h5v4h-1.5V2.5H10V1zM1 11h1.5v2.5H5V15H1v-4zm12.5 0V15h-4v-1.5h2.5V11H14z"/></svg>`;
+const COLLAPSE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M5 1v4H1V3.5h2.5V1H5zm6 0h1.5v2.5H15V5h-4V1zM1 11h4v4H3.5v-2.5H1V11zm9 0h4v1.5h-2.5V15H10v-4z"/></svg>`;
+
+function FullscreenControl() {
+  const map = useMap();
+  useEffect(() => {
+    let onFsChange: (() => void) | null = null;
+    const Ctrl = L.Control.extend({
+      options: { position: 'topleft' },
+      onAdd() {
+        const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+        const btn = L.DomUtil.create('a', 'leaflet-fullscreen-btn', container);
+        btn.href = '#';
+        btn.title = 'Toggle fullscreen';
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('aria-label', 'Toggle fullscreen');
+        btn.innerHTML = EXPAND_ICON;
+        onFsChange = () => {
+          btn.innerHTML = document.fullscreenElement ? COLLAPSE_ICON : EXPAND_ICON;
+          map.invalidateSize();
+        };
+        document.addEventListener('fullscreenchange', onFsChange);
+        L.DomEvent.on(btn, 'click', (e) => {
+          L.DomEvent.preventDefault(e);
+          L.DomEvent.stopPropagation(e);
+          if (!document.fullscreenElement) {
+            map.getContainer().requestFullscreen();
+          } else {
+            document.exitFullscreen();
+          }
+        });
+        return container;
+      },
+    });
+    const ctrl = new Ctrl();
+    ctrl.addTo(map);
+    return () => {
+      ctrl.remove();
+      if (onFsChange) document.removeEventListener('fullscreenchange', onFsChange);
+    };
+  }, [map]);
+  return null;
+}
+
 function featureStyle(iso: string, targetCCA2: string, guessedISO: string | null): L.PathOptions {
   if (!guessedISO) return STYLE_DEFAULT;
   if (iso === targetCCA2) return STYLE_CORRECT;
@@ -63,7 +107,6 @@ interface Props {
 
 export default function MapGame({ country, currentRound, totalRounds, onGuess, onGiveUp }: Props) {
   const [geoData, setGeoData] = useState<GeoJSON.FeatureCollection | null>(null);
-  const [answered, setAnswered] = useState(false);
   const geoLayerRef = useRef<L.GeoJSON | null>(null);
   const guessedRef = useRef<string | null>(null);
   const layersRef = useRef<Map<string, L.Layer>>(new Map());
@@ -77,7 +120,6 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
   // Reset per round
   useEffect(() => {
     guessedRef.current = null;
-    setAnswered(false);
     reset();
     if (geoLayerRef.current) {
       geoLayerRef.current.setStyle(() => STYLE_DEFAULT);
@@ -90,7 +132,6 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
     if (!iso || iso === '-99') return;
 
     guessedRef.current = iso;
-    setAnswered(true);
 
     // Update styles immediately via Leaflet (no React re-render needed)
     if (geoLayerRef.current) {
@@ -156,6 +197,7 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
           maxBounds={[[-90, -180], [90, 180]]}
           maxBoundsViscosity={1.0}
         >
+          <FullscreenControl />
           {geoData && (
             <GeoJSON
               ref={geoLayerRef}
