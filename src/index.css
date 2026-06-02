@@ -214,6 +214,12 @@ body {
   background: rgba(180, 83, 9, 0.08);
   color: var(--accent);
 }
+.start-error {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-top: 12px;
+}
 .start-btn {
   width: 100%;
   padding: 15px;

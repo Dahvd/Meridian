@@ -7,23 +7,12 @@ export type TriviaQuestion = {
   category: string;
 };
 
-export type TriviaPool = 'capital' | 'animal' | 'currency' | 'language' | 'domain' | 'calling';
+export type TriviaPool = 'capital' | 'animal' | 'language' | 'domain' | 'calling';
 
 const ALL_COUNTRIES = countriesData as unknown as Country[];
 const NATIONAL_ANIMALS = nationalAnimalsRaw as Record<string, string>;
 
 // ── Pre-computed uniqueness maps (built once at module load) ──────────────────
-
-/** Currency codes that appear in exactly one country's data */
-const UNIQUE_CURRENCY_CODES = (() => {
-  const counts = new Map<string, number>();
-  for (const c of ALL_COUNTRIES) {
-    for (const code of Object.keys(c.currencies ?? {})) {
-      counts.set(code, (counts.get(code) ?? 0) + 1);
-    }
-  }
-  return new Set([...counts.entries()].filter(([, n]) => n === 1).map(([k]) => k));
-})();
 
 /** Language codes spoken in 3 or fewer countries (distinctive enough for trivia) */
 const UNIQUE_LANGUAGE_CODES = (() => {
@@ -63,6 +52,23 @@ function getCallingCode(country: Country): string | null {
   return root + suffixes[0];
 }
 
+function sharesStem(a: string, b: string, minLen = 5): boolean {
+  return a.length >= minLen && b.length >= minLen && a.slice(0, minLen) === b.slice(0, minLen);
+}
+
+function isGiveaway(text: string, country: Country): boolean {
+  const lower = text.toLowerCase();
+  const name = country.name.common.toLowerCase();
+  const demonym = country.demonyms?.eng?.m?.toLowerCase() ?? '';
+  const nameWords = name.split(/[\s\-]+/);
+  const textWords = lower.split(/\s+/);
+  return lower.includes(name)
+    || (demonym.length > 3 && lower.includes(demonym))
+    || (lower.length > 3 && name.includes(lower))
+    || textWords.some(w => w.length >= 3 && name.includes(w))
+    || textWords.some(tw => nameWords.some(nw => sharesStem(tw, nw)));
+}
+
 // ── Question factories ────────────────────────────────────────────────────────
 
 type QuestionFactory = {
@@ -88,23 +94,13 @@ const ALL_FACTORIES: QuestionFactory[] = [
     },
   },
   {
-    pool: 'currency',
-    build: country => {
-      const entries = Object.entries(country.currencies ?? {});
-      const unique = entries.find(([code]) => UNIQUE_CURRENCY_CODES.has(code));
-      if (!unique) return null;
-      const [, { name, symbol }] = unique;
-      const symbolStr = symbol && symbol !== name ? ` (${symbol})` : '';
-      return { prompt: `What country uses the ${name}${symbolStr}?`, category: 'Currency' };
-    },
-  },
-  {
     pool: 'language',
     build: country => {
       const entries = Object.entries(country.languages ?? {});
       const unique = entries.find(([code]) => UNIQUE_LANGUAGE_CODES.has(code));
       if (!unique) return null;
       const [, langName] = unique;
+      if (isGiveaway(langName, country)) return null;
       return { prompt: `What country has ${langName} as an official language?`, category: 'Language' };
     },
   },

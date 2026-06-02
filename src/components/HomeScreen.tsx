@@ -5,7 +5,6 @@ import type { TriviaPool } from '../helpers/triviaHelpers';
 const TRIVIA_POOLS: { id: TriviaPool; label: string }[] = [
   { id: 'capital',  label: 'Capitals' },
   { id: 'animal',   label: 'Animals' },
-  { id: 'currency', label: 'Currency' },
   { id: 'language', label: 'Language' },
   { id: 'domain',   label: 'Domain' },
   { id: 'calling',  label: 'Dialling' },
@@ -43,11 +42,12 @@ const MINI_GAMES: { id: MiniGame; label: string; icon: string; desc: string; has
 interface Props {
   onStart: (rounds: number, difficulty: Difficulty, gameType: GameType, triviaPools?: TriviaPool[], region?: Region, endless?: boolean, minPop?: number) => void;
   onFeedback: () => void;
+  startError?: string | null;
 }
 
 type Screen = 'home' | 'config';
 
-export default function HomeScreen({ onStart, onFeedback }: Props) {
+export default function HomeScreen({ onStart, onFeedback, startError }: Props) {
   const [screen, setScreen] = useState<Screen>('home');
   const [selectedGame, setSelectedGame] = useState<GameType>('flag');
   const [rounds, setRounds] = useState(10);
@@ -200,6 +200,7 @@ export default function HomeScreen({ onStart, onFeedback }: Props) {
           </div>
         )}
 
+        {startError && <p className="start-error">{startError}</p>}
         <button className="start-btn" style={{ marginTop: 24 }} onClick={handleStart}>
           Start Game
         </button>

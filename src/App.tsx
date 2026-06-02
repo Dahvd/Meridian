@@ -29,6 +29,7 @@ export default function App() {
     pool,
     currentCountry,
     currentTriviaQuestion,
+    startError,
     startGame,
     handleGuess,
     playAgain,
@@ -39,7 +40,7 @@ export default function App() {
   return (
     <div className="app">
       {gameState === 'home' && (
-        <HomeScreen onStart={startGame} onFeedback={() => setFeedbackOpen(true)} />
+        <HomeScreen onStart={startGame} onFeedback={() => setFeedbackOpen(true)} startError={startError} />
       )}
 
       {gameState === 'playing' && currentCountry && (

@@ -22,4 +22,7 @@ export type Country = {
   area: number | null;
   latlng: [number, number] | null;
   borders: string[];
+  demonyms?: { eng?: { f: string; m: string } };
+  coatOfArms?: { png?: string; svg?: string };
+  car?: { side: 'left' | 'right'; signs: string[] };
 };

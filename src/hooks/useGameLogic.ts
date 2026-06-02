@@ -41,6 +41,7 @@ export function useGameLogic(allCountries: Country[]) {
   const [lastSettings, setLastSettings] = useState<LastSettings | null>(null);
   const [countries, setCountries] = useState<Country[]>([]);
   const [endless, setEndless] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
 
   useEffect(() => {
     if (gameState === 'playing' && countries.length > 0) {
@@ -65,6 +66,11 @@ export function useGameLogic(allCountries: Country[]) {
       ? filterForPools(popFiltered, pools)
       : popFiltered;
     const pool = shuffle([...eligible]);
+    if (pool.length < 4) {
+      setStartError('Not enough countries match these settings. Try a different region or question type.');
+      return;
+    }
+    setStartError(null);
     const gameRounds = type === 'progressive' ? 1 : endlessMode ? pool.length : Math.min(rounds, pool.length);
     const questions = type === 'trivia' ? buildTriviaQuestions(pool.slice(0, gameRounds), pools) : [];
 
@@ -125,6 +131,7 @@ export function useGameLogic(allCountries: Country[]) {
     options,
     guesses,
     endless,
+    startError,
     pool: countries,
     currentCountry: countries[countryIndex] ?? null,
     currentTriviaQuestion: triviaQuestions[currentRound] ?? null,
