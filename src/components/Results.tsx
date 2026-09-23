@@ -62,7 +62,7 @@ export default function Results({ guesses, gameType, endless, onPlayAgain, onGoH
                 <span className="result-question">{g.triviaQuestion.prompt}</span>
               )}
               {!g.correct && (
-                <span className="result-wrong-guess">You guessed: {g.selected.name.common}</span>
+                <span className="result-wrong-guess">You guessed: {g.selectedText ?? g.selected.name.common}</span>
               )}
             </div>
             <span className="result-status">

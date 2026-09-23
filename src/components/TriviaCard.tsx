@@ -1,58 +1,78 @@
 import { useState, useEffect } from 'react';
-import type { Country } from '../types/country';
-import type { TriviaQuestion } from '../helpers/triviaHelpers';
+import type { FactQuestion } from '../helpers/questionGenerators';
 import type { Difficulty } from '../hooks/useGameLogic';
 import { useNextStep } from '../hooks/useNextStep';
-import SearchInput from './SearchInput';
 
 interface Props {
-  country: Country;
-  question: TriviaQuestion;
-  options: Country[];
+  question: FactQuestion;
   currentRound: number;
   totalRounds: number;
   difficulty: Difficulty;
   endless: boolean;
-  onGuess: (country: Country, hintUsed?: boolean) => void;
+  onGuess: (correct: boolean, selectedText: string) => void;
   onGiveUp: () => void;
 }
 
-export default function TriviaCard({ country, question, options, currentRound, totalRounds, difficulty, endless, onGuess, onGiveUp }: Props) {
-  const [selected, setSelected] = useState<Country | null>(null);
-  const [hintRevealed, setHintRevealed] = useState(false);
-  const [searchCommitted, setSearchCommitted] = useState(false);
+// Category badge colour tokens — warm palette consistent with existing badges
+const CATEGORY_CLASSES: Record<string, string> = {
+  Capital: 'trivia-badge-green',
+  Region: 'trivia-badge-blue',
+  Domain: 'trivia-badge-orange',
+  'Driving Side': 'trivia-badge-purple',
+  Superlative: 'trivia-badge-teal',
+  Geography: 'trivia-badge-green',
+  History: 'trivia-badge-amber',
+  Culture: 'trivia-badge-orange',
+};
+
+// Use 1-column layout when options are long strings (mountains, symbols, etc.)
+function needsWideLayout(options: string[]): boolean {
+  return options.some(o => o.length > 22);
+}
+
+export default function TriviaCard({
+  question, currentRound, totalRounds, difficulty, endless, onGuess, onGiveUp,
+}: Props) {
+  const [selected, setSelected] = useState<string | null>(null);
   const { autoNext, toggle, nextAction, schedule, reset } = useNextStep();
   const progress = ((currentRound + 1) / totalRounds) * 100;
+  const badgeClass = CATEGORY_CLASSES[question.category] ?? 'trivia-badge-green';
+  const wide = needsWideLayout(question.options);
 
   useEffect(() => {
     setSelected(null);
-    setHintRevealed(false);
-    setSearchCommitted(false);
     reset();
-  }, [country]);
+  }, [question]);
 
-  function handleClick(opt: Country) {
-    if (selected) return;
+  function handleClick(opt: string) {
+    if (selected !== null) return;
     setSelected(opt);
-    schedule(900, () => onGuess(opt, hintRevealed));
+    const correct = opt === question.correctAnswer;
+    schedule(900, () => onGuess(correct, opt));
   }
 
-  function getButtonClass(opt: Country) {
-    if (!selected) return 'option-btn';
-    if (opt.cca2 === country.cca2) return 'option-btn reveal-correct';
-    if (opt.cca2 === selected.cca2) return 'option-btn reveal-incorrect';
+  function getButtonClass(opt: string): string {
+    if (selected === null) return 'option-btn';
+    if (opt === question.correctAnswer) return 'option-btn reveal-correct';
+    if (opt === selected) return 'option-btn reveal-incorrect';
     return 'option-btn dimmed';
   }
 
-  const showButtons = difficulty === 'normal' || hintRevealed;
-  const showHint = !showButtons && !searchCommitted;
+  // Hard difficulty: show subject country flag as a visual hint.
+  // Skip for Driving Side and Superlative — question.country is the correct answer there,
+  // so showing its flag would give the answer away.
+  const showFlag = difficulty === 'hard'
+    && question.category !== 'Driving Side'
+    && question.category !== 'Superlative';
 
   return (
     <div className="card">
       <div className="progress-header">
-        <span className="round-label">{endless ? `Round ${currentRound + 1}` : `Round ${currentRound + 1} of ${totalRounds}`}</span>
+        <span className="round-label">
+          {endless ? `Round ${currentRound + 1}` : `Round ${currentRound + 1} of ${totalRounds}`}
+        </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="player-badge trivia-badge">{question.category}</span>
+          <span className={`player-badge trivia-badge ${badgeClass}`}>{question.category}</span>
           <button className="give-up-btn" onClick={onGiveUp}>Give up</button>
         </div>
       </div>
@@ -60,43 +80,45 @@ export default function TriviaCard({ country, question, options, currentRound, t
         <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
       </div>
 
+      {showFlag && (
+        <div className="trivia-flag-hint">
+          <img
+            src={question.country.flags.svg}
+            alt={`Flag of ${question.country.name.common}`}
+            className="trivia-flag-hint-img"
+          />
+        </div>
+      )}
+
       <div className="trivia-prompt-wrap">
         <p className="trivia-prompt">{question.prompt}</p>
       </div>
 
-      {showHint && (
-        <SearchInput
-          correctCountry={country}
-          onGuess={c => { setSearchCommitted(true); onGuess(c, false); }}
-        />
-      )}
+      <div className={`trivia-options${wide ? ' trivia-options-wide' : ''}`}>
+        {question.options.map(opt => (
+          <button
+            key={opt}
+            className={getButtonClass(opt)}
+            onClick={() => handleClick(opt)}
+            disabled={selected !== null}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
 
-      {showHint && (
-        <button className="hint-btn" onClick={() => setHintRevealed(true)}>
-          Show options
-        </button>
-      )}
-
-      {showButtons && (
-        <div className="options-grid">
-          {options.map(opt => (
-            <button
-              key={opt.cca2}
-              className={getButtonClass(opt)}
-              onClick={() => handleClick(opt)}
-              disabled={!!selected}
-            >
-              {opt.name.common}
-            </button>
-          ))}
-        </div>
-      )}
       <div className="game-footer">
         <label className="auto-label">
           <input type="checkbox" checked={autoNext} onChange={toggle} />
           Auto continue
         </label>
-        <button className="next-btn" onClick={nextAction ?? undefined} disabled={!nextAction || autoNext}>Next →</button>
+        <button
+          className="next-btn"
+          onClick={nextAction ?? undefined}
+          disabled={!nextAction || autoNext}
+        >
+          Next →
+        </button>
       </div>
     </div>
   );

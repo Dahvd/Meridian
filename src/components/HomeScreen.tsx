@@ -1,14 +1,5 @@
 import { useState } from 'react';
 import type { Difficulty, GameType, Region } from '../hooks/useGameLogic';
-import type { TriviaPool } from '../helpers/triviaHelpers';
-
-const TRIVIA_POOLS: { id: TriviaPool; label: string }[] = [
-  { id: 'capital',  label: 'Capitals' },
-  { id: 'animal',   label: 'Animals' },
-  { id: 'language', label: 'Language' },
-  { id: 'domain',   label: 'Domain' },
-  { id: 'calling',  label: 'Dialling' },
-];
 
 const REGIONS: { id: Region; label: string }[] = [
   { id: 'all',      label: 'World' },
@@ -40,7 +31,7 @@ const MINI_GAMES: { id: MiniGame; label: string; icon: string; desc: string; has
 ];
 
 interface Props {
-  onStart: (rounds: number, difficulty: Difficulty, gameType: GameType, triviaPools?: TriviaPool[], region?: Region, endless?: boolean, minPop?: number) => void;
+  onStart: (rounds: number, difficulty: Difficulty, gameType: GameType, region?: Region, endless?: boolean, minPop?: number) => void;
   onFeedback: () => void;
   startError?: string | null;
 }
@@ -55,26 +46,10 @@ export default function HomeScreen({ onStart, onFeedback, startError }: Props) {
   const [region, setRegion] = useState<Region>('all');
   const [endless, setEndless] = useState(false);
   const [minPop, setMinPop] = useState(0);
-  const [triviaPools, setTriviaPools] = useState<Set<TriviaPool>>(
-    new Set(TRIVIA_POOLS.map(p => p.id))
-  );
 
   function selectGame(id: GameType) {
     setSelectedGame(id);
     setScreen('config');
-  }
-
-  function togglePool(id: TriviaPool) {
-    setTriviaPools(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        if (next.size === 1) return prev;
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
   }
 
   function handleStart() {
@@ -82,7 +57,6 @@ export default function HomeScreen({ onStart, onFeedback, startError }: Props) {
       rounds,
       difficulty,
       selectedGame,
-      selectedGame === 'trivia' ? [...triviaPools] : undefined,
       region,
       endless,
       selectedGame === 'progressive' ? minPop : 0,
@@ -125,23 +99,6 @@ export default function HomeScreen({ onStart, onFeedback, startError }: Props) {
           </>
         )}
 
-        {selectedGame === 'trivia' && (
-          <>
-            <p className="round-label-sm">Question pools</p>
-            <div className="pool-grid">
-              {TRIVIA_POOLS.map(p => (
-                <button
-                  key={p.id}
-                  className={`pool-btn${triviaPools.has(p.id) ? ' active' : ''}`}
-                  onClick={() => togglePool(p.id)}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
         {showRounds && (
           <>
             <p className="round-label-sm">Rounds</p>
@@ -164,7 +121,7 @@ export default function HomeScreen({ onStart, onFeedback, startError }: Props) {
             <p className="round-label-sm">Difficulty</p>
             <div className="mode-toggle" style={{ marginBottom: 24 }}>
               <button className={`mode-btn${difficulty === 'normal' ? ' active' : ''}`} onClick={() => setDifficulty('normal')}>Normal — 4 choices</button>
-              <button className={`mode-btn${difficulty === 'hard'   ? ' active' : ''}`} onClick={() => setDifficulty('hard')}>Hard — type it out</button>
+              <button className={`mode-btn${difficulty === 'hard'   ? ' active' : ''}`} onClick={() => setDifficulty('hard')}>{(selectedGame === 'silhouette' || selectedGame === 'flag') ? 'Hard — type it out' : 'Hard — same-region distractors'}</button>
             </div>
           </>
         )}

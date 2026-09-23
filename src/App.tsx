@@ -28,10 +28,11 @@ export default function App() {
     endless,
     pool,
     currentCountry,
-    currentTriviaQuestion,
+    currentFactQuestion,
     startError,
     startGame,
     handleGuess,
+    handleTriviaGuess,
     playAgain,
     goHome,
     giveUp,
@@ -58,16 +59,14 @@ export default function App() {
               onGiveUp={giveUp}
             />
           )}
-          {gameType === 'trivia' && currentTriviaQuestion && options.length > 0 && (
+          {gameType === 'trivia' && currentFactQuestion && (
             <TriviaCard
-              country={currentCountry}
-              question={currentTriviaQuestion}
-              options={options}
+              question={currentFactQuestion}
               currentRound={currentRound}
               totalRounds={totalRounds}
               difficulty={difficulty}
               endless={endless}
-              onGuess={handleGuess}
+              onGuess={handleTriviaGuess}
               onGiveUp={giveUp}
             />
           )}

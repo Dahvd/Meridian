@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import type { Country } from '../types/country';
 import { getAnswerOptions, shuffle } from '../helpers/countryHelpers';
-import { buildTriviaQuestions, filterForPools, type TriviaQuestion, type TriviaPool } from '../helpers/triviaHelpers';
+import { buildFactQuestions, type FactQuestion } from '../helpers/questionGenerators';
 
 export type Guess = {
   correct: boolean;
   selected: Country;
   answer: Country;
-  triviaQuestion?: TriviaQuestion;
+  triviaQuestion?: { prompt: string; category: string };
+  selectedText?: string;
   hintUsed?: boolean;
 };
 
@@ -22,7 +23,6 @@ type LastSettings = {
   rounds: number;
   diff: Difficulty;
   type: GameType;
-  pools?: TriviaPool[];
   region: Region;
   endless: boolean;
   minPop: number;
@@ -37,7 +37,7 @@ export function useGameLogic(allCountries: Country[]) {
   const [countryIndex, setCountryIndex] = useState(0);
   const [options, setOptions] = useState<Country[]>([]);
   const [guesses, setGuesses] = useState<Guess[]>([]);
-  const [triviaQuestions, setTriviaQuestions] = useState<TriviaQuestion[]>([]);
+  const [factQuestions, setFactQuestions] = useState<FactQuestion[]>([]);
   const [lastSettings, setLastSettings] = useState<LastSettings | null>(null);
   const [countries, setCountries] = useState<Country[]>([]);
   const [endless, setEndless] = useState(false);
@@ -53,7 +53,6 @@ export function useGameLogic(allCountries: Country[]) {
     rounds: number,
     diff: Difficulty,
     type: GameType,
-    pools?: TriviaPool[],
     region: Region = 'all',
     endlessMode = false,
     minPop = 0,
@@ -62,26 +61,27 @@ export function useGameLogic(allCountries: Country[]) {
       ? allCountries
       : allCountries.filter(c => c.region === region);
     const popFiltered = minPop > 0 ? regionFiltered.filter(c => c.population >= minPop) : regionFiltered;
-    const eligible = type === 'trivia' && pools?.length
-      ? filterForPools(popFiltered, pools)
-      : popFiltered;
-    const pool = shuffle([...eligible]);
+    const pool = shuffle([...popFiltered]);
+
     if (pool.length < 4) {
       setStartError('Not enough countries match these settings. Try a different region or question type.');
       return;
     }
     setStartError(null);
-    const gameRounds = type === 'progressive' ? 1 : endlessMode ? pool.length : Math.min(rounds, pool.length);
-    const questions = type === 'trivia' ? buildTriviaQuestions(pool.slice(0, gameRounds), pools) : [];
 
-    setLastSettings({ rounds, diff, type, pools, region, endless: endlessMode, minPop });
+    const gameRounds = type === 'progressive' ? 1 : endlessMode ? pool.length : Math.min(rounds, pool.length);
+    const slice = pool.slice(0, gameRounds);
+
+    const factQs = type === 'trivia' ? buildFactQuestions(slice, diff) : [];
+
+    setLastSettings({ rounds, diff, type, region, endless: endlessMode, minPop });
     setTotalRounds(gameRounds);
     setDifficulty(diff);
     setGameType(type);
     setCurrentRound(0);
     setCountryIndex(0);
     setGuesses([]);
-    setTriviaQuestions(questions);
+    setFactQuestions(factQs);
     setCountries(pool);
     setEndless(endlessMode);
     setGameState('playing');
@@ -89,20 +89,37 @@ export function useGameLogic(allCountries: Country[]) {
 
   function playAgain() {
     if (!lastSettings) { setGameState('home'); return; }
-    const { rounds, diff, type, pools, region, endless: e, minPop } = lastSettings;
-    startGame(rounds, diff, type, pools, region, e, minPop);
+    const { rounds, diff, type, region, endless: e, minPop } = lastSettings;
+    startGame(rounds, diff, type, region, e, minPop);
   }
 
   function handleGuess(selected: Country, hintUsed?: boolean) {
     const answer = countries[countryIndex];
     const correct = selected.cca2 === answer.cca2;
-    const triviaQuestion = gameType === 'trivia' ? triviaQuestions[currentRound] : undefined;
-    const newGuesses = [...guesses, { correct, selected, answer, triviaQuestion, hintUsed }];
+    const newGuesses = [...guesses, { correct, selected, answer, hintUsed }];
     setGuesses(newGuesses);
+    advance(newGuesses.length);
+  }
 
-    const isLastRound = currentRound + 1 === totalRounds;
+  function handleTriviaGuess(correct: boolean, selectedText: string) {
+    const factQ = factQuestions[currentRound];
+    const answer = factQ.country as Country;
+    const newGuesses: Guess[] = [
+      ...guesses,
+      {
+        correct,
+        selected: answer,
+        answer,
+        triviaQuestion: { prompt: factQ.prompt, category: factQ.category },
+        selectedText: correct ? undefined : selectedText,
+      },
+    ];
+    setGuesses(newGuesses);
+    advance(newGuesses.length);
+  }
 
-    if (isLastRound) {
+  function advance(roundsPlayed: number) {
+    if (roundsPlayed === totalRounds) {
       setGameState('results');
     } else {
       setCurrentRound(r => r + 1);
@@ -134,9 +151,10 @@ export function useGameLogic(allCountries: Country[]) {
     startError,
     pool: countries,
     currentCountry: countries[countryIndex] ?? null,
-    currentTriviaQuestion: triviaQuestions[currentRound] ?? null,
+    currentFactQuestion: factQuestions[currentRound] ?? null,
     startGame,
     handleGuess: handleGuess as (selected: Country, hintUsed?: boolean) => void,
+    handleTriviaGuess,
     playAgain,
     goHome,
     giveUp,
