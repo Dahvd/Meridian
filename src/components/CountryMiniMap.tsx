@@ -21,7 +21,10 @@ const STYLE_HIGHLIGHT: L.PathOptions = {
 function ExpandControl({ onExpand }: { onExpand: () => void }) {
   const map = useMap();
   const cbRef = useRef(onExpand);
-  cbRef.current = onExpand;
+
+  useEffect(() => {
+    cbRef.current = onExpand;
+  }, [onExpand]);
 
   useEffect(() => {
     const Ctrl = L.Control.extend({

@@ -12,22 +12,15 @@ const REGIONS: { id: Region; label: string }[] = [
 
 const ROUND_OPTIONS = [5, 10, 15, 20];
 
-type ClassicGame = Extract<GameType, 'flag' | 'trivia' | 'map'>;
-type MiniGame = Exclude<GameType, ClassicGame>;
-
-const CLASSIC_GAMES: { id: ClassicGame; label: string; icon: string; desc: string }[] = [
-  { id: 'flag',   icon: '🏳',  label: 'Flags',  desc: 'Identify countries by their flag' },
-  { id: 'trivia', icon: '🌍', label: 'Trivia', desc: 'Capitals, currencies, languages & more' },
-  { id: 'map',    icon: '🗺',  label: 'Map',    desc: 'Click the country on the map' },
-];
-
-const MINI_GAMES: { id: MiniGame; label: string; icon: string; desc: string; hasRounds: boolean; hasDifficulty: boolean }[] = [
-  { id: 'flag-grid',      icon: '🔲', label: 'Flag Grid',        desc: 'Find the flag in a 9-flag grid',         hasRounds: true,  hasDifficulty: false },
-  { id: 'higher-or-lower',icon: '📊', label: 'Higher or Lower',  desc: 'Which country has more population?',     hasRounds: true,  hasDifficulty: false },
-  { id: 'silhouette',     icon: '🌑', label: 'Silhouette',       desc: 'Guess from the country outline',         hasRounds: true,  hasDifficulty: true  },
-  { id: 'odd-one-out',    icon: '🔍', label: 'Odd One Out',      desc: 'Which country doesn\'t belong?',         hasRounds: true,  hasDifficulty: false },
-  { id: 'progressive',    icon: '💡', label: 'Progressive Clues',desc: 'Guess with fewer clues for more points', hasRounds: true,  hasDifficulty: false },
-  { id: 'memory',         icon: '🃏', label: 'Memory',           desc: 'Match flags to country names',           hasRounds: false, hasDifficulty: false },
+const GAMES: { id: GameType; label: string; icon: string; desc: string }[] = [
+  { id: 'flag',           icon: '🏳',  label: 'Flags',            desc: 'Identify countries by their flag' },
+  { id: 'trivia',         icon: '🌍', label: 'Trivia',           desc: 'Capitals, currencies, languages & more' },
+  { id: 'map',            icon: '🗺',  label: 'Map',              desc: 'Click the country on the map' },
+  { id: 'flag-grid',      icon: '🔲', label: 'Flag Grid',        desc: 'Find the flag in a 9-flag grid' },
+  { id: 'higher-or-lower',icon: '📊', label: 'Higher or Lower',  desc: 'Which country has more population?' },
+  { id: 'silhouette',     icon: '🌑', label: 'Silhouette',       desc: 'Guess from the country outline' },
+  { id: 'odd-one-out',    icon: '🔍', label: 'Odd One Out',      desc: 'Which country doesn\'t belong?' },
+  { id: 'progressive',    icon: '💡', label: 'Countryle',        desc: 'Wordle-style country guesser' },
 ];
 
 interface Props {
@@ -63,14 +56,12 @@ export default function HomeScreen({ onStart, onFeedback, startError }: Props) {
     );
   }
 
-  const miniDef = MINI_GAMES.find(g => g.id === selectedGame);
-  const classicDef = CLASSIC_GAMES.find(g => g.id === selectedGame);
-  const gameDef = miniDef ?? classicDef;
+  const gameDef = GAMES.find(g => g.id === selectedGame);
 
-  const showDifficulty = selectedGame !== 'map' && selectedGame !== 'flag-grid' && selectedGame !== 'higher-or-lower' && selectedGame !== 'odd-one-out' && selectedGame !== 'progressive' && selectedGame !== 'memory';
-  const showRounds = selectedGame !== 'memory' && selectedGame !== 'progressive';
+  const showDifficulty = selectedGame !== 'map' && selectedGame !== 'flag-grid' && selectedGame !== 'higher-or-lower' && selectedGame !== 'odd-one-out' && selectedGame !== 'progressive';
+  const showRounds = selectedGame !== 'progressive';
   const showEndless = selectedGame === 'flag' || selectedGame === 'trivia';
-  const showRegion = selectedGame !== 'silhouette' && selectedGame !== 'memory';
+  const showRegion = selectedGame !== 'silhouette';
 
   if (screen === 'config') {
     return (
@@ -170,20 +161,9 @@ export default function HomeScreen({ onStart, onFeedback, startError }: Props) {
       <h1 className="home-title">Meridian</h1>
       <p className="home-subtitle">Test your world knowledge</p>
 
-      <p className="round-label-sm">Classic</p>
-      <div className="game-grid classic-grid">
-        {CLASSIC_GAMES.map(g => (
-          <button key={g.id} className="game-tile" onClick={() => selectGame(g.id)}>
-            <span className="game-tile-icon">{g.icon}</span>
-            <span className="game-tile-label">{g.label}</span>
-            <span className="game-tile-desc">{g.desc}</span>
-          </button>
-        ))}
-      </div>
-
-      <p className="round-label-sm" style={{ marginTop: 20 }}>Mini Games</p>
-      <div className="game-grid mini-grid">
-        {MINI_GAMES.map(g => (
+      <p className="round-label-sm">Game Modes</p>
+      <div className="game-grid">
+        {GAMES.map(g => (
           <button key={g.id} className="game-tile" onClick={() => selectGame(g.id)}>
             <span className="game-tile-icon">{g.icon}</span>
             <span className="game-tile-label">{g.label}</span>

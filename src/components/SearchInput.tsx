@@ -34,12 +34,8 @@ export default function SearchInput({ correctCountry, onGuess, showReveal = true
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setQuery('');
-    setMatches([]);
-    setGuessed(null);
-    setHighlighted(0);
     inputRef.current?.focus();
-  }, [correctCountry]);
+  }, []);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;

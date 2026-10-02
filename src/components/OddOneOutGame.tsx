@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNextStep } from '../hooks/useNextStep';
+import NextControls from './NextControls';
 import type { Country } from '../types/country';
-import { shuffle } from '../helpers/countryHelpers';
+import { shuffle, getFlagUrl } from '../helpers/countryHelpers';
 import countriesData from '../data/countries.json';
 
 const ALL_FALLBACK = countriesData as unknown as Country[];
@@ -82,12 +83,10 @@ interface Props {
 export default function OddOneOutGame({ country, pool, currentRound, totalRounds, onGuess, onGiveUp }: Props) {
   const [selected, setSelected] = useState<Country | null>(null);
   const [hintShown, setHintShown] = useState(false);
-  const { autoNext, toggle, nextAction, schedule, reset } = useNextStep();
+  const { autoNext, toggle, nextAction, schedule } = useNextStep();
   const progress = ((currentRound + 1) / totalRounds) * 100;
 
-  const group = useMemo(() => buildGroup(country, pool), [country.cca2]);
-
-  useEffect(() => { setSelected(null); setHintShown(false); reset(); }, [country.cca2]);
+  const group = useMemo(() => buildGroup(country, pool), [country, pool]);
 
   function handlePick(opt: Country) {
     if (selected || !group) return;
@@ -126,7 +125,7 @@ export default function OddOneOutGame({ country, pool, currentRound, totalRounds
       <div className="odd-grid">
         {group.countries.map(opt => (
           <button key={opt.cca2} className={cellClass(opt)} onClick={() => handlePick(opt)} disabled={!!selected}>
-            <img src={opt.flags.svg} alt="" className="odd-flag" />
+            <img src={getFlagUrl(opt.cca2)} alt="" className="odd-flag" />
             <span className="odd-name">{opt.name.common}</span>
           </button>
         ))}
@@ -137,13 +136,7 @@ export default function OddOneOutGame({ country, pool, currentRound, totalRounds
       {!selected && !hintShown && (
         <button className="hint-btn" onClick={() => setHintShown(true)}>Show hint</button>
       )}
-      <div className="game-footer">
-        <label className="auto-label">
-          <input type="checkbox" checked={autoNext} onChange={toggle} />
-          Auto continue
-        </label>
-        <button className="next-btn" onClick={nextAction ?? undefined} disabled={!nextAction || autoNext}>Next →</button>
-      </div>
+      <NextControls nextAction={nextAction} autoNext={autoNext} toggle={toggle} />
     </div>
   );
 }

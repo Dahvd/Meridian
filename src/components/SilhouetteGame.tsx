@@ -6,6 +6,7 @@ import type { Country } from '../types/country';
 import type { Difficulty } from '../hooks/useGameLogic';
 import { useNextStep } from '../hooks/useNextStep';
 import SearchInput from './SearchInput';
+import NextControls from './NextControls';
 
 type GeoFeature = GeoJSON.Feature<GeoJSON.Geometry, { ISO_A2: string; ISO_A2_EH: string }>;
 
@@ -33,7 +34,7 @@ export default function SilhouetteGame({ country, options, currentRound, totalRo
   const [selected, setSelected] = useState<Country | null>(null);
   const [hintRevealed, setHintRevealed] = useState(false);
   const [searchCommitted, setSearchCommitted] = useState(false);
-  const { autoNext, toggle, nextAction, schedule, reset } = useNextStep();
+  const { autoNext, toggle, nextAction, schedule } = useNextStep();
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.GeoJSON | null>(null);
   const progress = ((currentRound + 1) / totalRounds) * 100;
@@ -41,13 +42,6 @@ export default function SilhouetteGame({ country, options, currentRound, totalRo
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}countries.geojson`).then(r => r.json()).then(setGeoData);
   }, []);
-
-  useEffect(() => {
-    setSelected(null);
-    setHintRevealed(false);
-    setSearchCommitted(false);
-    reset();
-  }, [country.cca2]);
 
   // Auto-skip countries with no GeoJSON feature (not penalised)
   useEffect(() => {
@@ -144,13 +138,7 @@ export default function SilhouetteGame({ country, options, currentRound, totalRo
           ))}
         </div>
       )}
-      <div className="game-footer">
-        <label className="auto-label">
-          <input type="checkbox" checked={autoNext} onChange={toggle} />
-          Auto continue
-        </label>
-        <button className="next-btn" onClick={nextAction ?? undefined} disabled={!nextAction || autoNext}>Next →</button>
-      </div>
+      <NextControls nextAction={nextAction} autoNext={autoNext} toggle={toggle} />
     </div>
   );
 }

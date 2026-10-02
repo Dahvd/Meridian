@@ -27,9 +27,11 @@ const latlngMap = new Map(latlngData.map(c => [c.cca2, c.latlng ?? null]));
 const bordersMap = new Map(bordersData.map(c => [c.cca2, c.borders ?? []]));
 const extrasMap = new Map(extrasData.map(c => [c.cca2, { demonyms: c.demonyms, coatOfArms: c.coatOfArms, car: c.car }]));
 
+// Flag images are downloaded separately by fetch-flags.js and served locally
+// (see src/helpers/countryHelpers.ts#getFlagUrl) — only the descriptive alt text is kept here.
 const valid = data
   .filter(c => c.flags?.svg && c.name?.common)
-  .map(c => ({ ...c, area: areaMap.get(c.cca2) ?? null, latlng: latlngMap.get(c.cca2) ?? null, borders: bordersMap.get(c.cca2) ?? [], ...(extrasMap.get(c.cca2) ?? {}) }))
+  .map(c => ({ ...c, flags: { alt: c.flags?.alt }, area: areaMap.get(c.cca2) ?? null, latlng: latlngMap.get(c.cca2) ?? null, borders: bordersMap.get(c.cca2) ?? [], ...(extrasMap.get(c.cca2) ?? {}) }))
   .sort((a, b) => a.name.common.localeCompare(b.name.common));
 
 writeFileSync('src/data/countries.json', JSON.stringify(valid));

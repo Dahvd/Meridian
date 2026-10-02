@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { FactQuestion } from '../helpers/questionGenerators';
 import type { Difficulty } from '../hooks/useGameLogic';
 import { useNextStep } from '../hooks/useNextStep';
+import { getFlagUrl } from '../helpers/countryHelpers';
+import NextControls from './NextControls';
 
 interface Props {
   question: FactQuestion;
@@ -34,15 +36,10 @@ export default function TriviaCard({
   question, currentRound, totalRounds, difficulty, endless, onGuess, onGiveUp,
 }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
-  const { autoNext, toggle, nextAction, schedule, reset } = useNextStep();
+  const { autoNext, toggle, nextAction, schedule } = useNextStep();
   const progress = ((currentRound + 1) / totalRounds) * 100;
   const badgeClass = CATEGORY_CLASSES[question.category] ?? 'trivia-badge-green';
   const wide = needsWideLayout(question.options);
-
-  useEffect(() => {
-    setSelected(null);
-    reset();
-  }, [question]);
 
   function handleClick(opt: string) {
     if (selected !== null) return;
@@ -83,7 +80,7 @@ export default function TriviaCard({
       {showFlag && (
         <div className="trivia-flag-hint">
           <img
-            src={question.country.flags.svg}
+            src={getFlagUrl(question.country.cca2)}
             alt={`Flag of ${question.country.name.common}`}
             className="trivia-flag-hint-img"
           />
@@ -107,19 +104,7 @@ export default function TriviaCard({
         ))}
       </div>
 
-      <div className="game-footer">
-        <label className="auto-label">
-          <input type="checkbox" checked={autoNext} onChange={toggle} />
-          Auto continue
-        </label>
-        <button
-          className="next-btn"
-          onClick={nextAction ?? undefined}
-          disabled={!nextAction || autoNext}
-        >
-          Next →
-        </button>
-      </div>
+      <NextControls nextAction={nextAction} autoNext={autoNext} toggle={toggle} />
     </div>
   );
 }

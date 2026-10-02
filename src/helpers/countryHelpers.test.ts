@@ -6,7 +6,7 @@ function makeCountry(cca2: string): Country {
   return {
     cca2,
     name: { common: cca2, official: cca2 },
-    flags: { png: '', svg: '' },
+    flags: {},
     region: 'Test',
     capital: [`${cca2} City`],
     population: 1_000_000,

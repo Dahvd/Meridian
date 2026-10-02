@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import type { Country } from '../types/country';
-import { shuffle } from '../helpers/countryHelpers';
+import { shuffle, getFlagUrl } from '../helpers/countryHelpers';
 import { useNextStep } from '../hooks/useNextStep';
 import countriesData from '../data/countries.json';
+import NextControls from './NextControls';
 
 const FALLBACK = countriesData as unknown as Country[];
 
@@ -17,16 +18,13 @@ interface Props {
 
 export default function FlagGridGame({ country, pool, currentRound, totalRounds, onGuess, onGiveUp }: Props) {
   const [selected, setSelected] = useState<Country | null>(null);
-  const [grid, setGrid] = useState<Country[]>([]);
-  const { autoNext, toggle, nextAction, schedule, reset } = useNextStep();
+  const { autoNext, toggle, nextAction, schedule } = useNextStep();
   const progress = ((currentRound + 1) / totalRounds) * 100;
 
-  useEffect(() => {
-    setSelected(null);
-    reset();
+  const grid = useMemo(() => {
     const source = pool.length >= 9 ? pool : FALLBACK;
     const distractors = shuffle(source.filter(c => c.cca2 !== country.cca2)).slice(0, 8);
-    setGrid(shuffle([country, ...distractors]));
+    return shuffle([country, ...distractors]);
   }, [country, pool]);
 
   function handleClick(opt: Country) {
@@ -42,6 +40,15 @@ export default function FlagGridGame({ country, pool, currentRound, totalRounds,
     return 'grid-flag-cell dimmed';
   }
 
+  // Positional label, not the country name — naming it would give the answer away.
+  function cellLabel(opt: Country, i: number): string {
+    const base = `Option ${i + 1}`;
+    if (!selected) return base;
+    if (opt.cca2 === country.cca2) return `${base}, correct answer`;
+    if (opt.cca2 === selected.cca2) return `${base}, your incorrect guess`;
+    return base;
+  }
+
   return (
     <div className="card flag-grid-card">
       <div className="progress-header">
@@ -55,19 +62,19 @@ export default function FlagGridGame({ country, pool, currentRound, totalRounds,
         Find the flag of <strong>{country.name.common}</strong>
       </p>
       <div className="flag-grid-9">
-        {grid.map(opt => (
-          <button key={opt.cca2} className={cellClass(opt)} onClick={() => handleClick(opt)} disabled={!!selected}>
-            <img src={opt.flags.svg} alt="" className="grid-flag-img" />
+        {grid.map((opt, i) => (
+          <button
+            key={opt.cca2}
+            className={cellClass(opt)}
+            onClick={() => handleClick(opt)}
+            disabled={!!selected}
+            aria-label={cellLabel(opt, i)}
+          >
+            <img src={getFlagUrl(opt.cca2)} alt="" className="grid-flag-img" />
           </button>
         ))}
       </div>
-      <div className="game-footer">
-        <label className="auto-label">
-          <input type="checkbox" checked={autoNext} onChange={toggle} />
-          Auto continue
-        </label>
-        <button className="next-btn" onClick={nextAction ?? undefined} disabled={!nextAction || autoNext}>Next →</button>
-      </div>
+      <NextControls nextAction={nextAction} autoNext={autoNext} toggle={toggle} />
     </div>
   );
 }

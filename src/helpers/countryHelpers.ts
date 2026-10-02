@@ -15,3 +15,7 @@ export function getAnswerOptions(countries: Country[], correctIndex: number): Co
   const distractors = shuffle(pool).slice(0, 3);
   return shuffle([correct, ...distractors]);
 }
+
+export function getFlagUrl(cca2: string): string {
+  return `${import.meta.env.BASE_URL}flags/${cca2}.svg`;
+}

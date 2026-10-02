@@ -4,8 +4,6 @@ export type Country = {
     official: string;
   };
   flags: {
-    png: string;
-    svg: string;
     alt?: string;
   };
   cca2: string;

@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { Country } from '../types/country';
 import type { Difficulty } from '../hooks/useGameLogic';
 import { useNextStep } from '../hooks/useNextStep';
+import { getFlagUrl } from '../helpers/countryHelpers';
 import SearchInput from './SearchInput';
+import NextControls from './NextControls';
 
 interface Props {
   country: Country;
@@ -19,15 +21,8 @@ export default function FlagCard({ country, options, currentRound, totalRounds, 
   const [selected, setSelected] = useState<Country | null>(null);
   const [hintRevealed, setHintRevealed] = useState(false);
   const [searchCommitted, setSearchCommitted] = useState(false);
-  const { autoNext, toggle, nextAction, schedule, reset } = useNextStep();
+  const { autoNext, toggle, nextAction, schedule } = useNextStep();
   const progress = ((currentRound + 1) / totalRounds) * 100;
-
-  useEffect(() => {
-    setSelected(null);
-    setHintRevealed(false);
-    setSearchCommitted(false);
-    reset();
-  }, [country]);
 
   function handleClick(opt: Country) {
     if (selected) return;
@@ -57,8 +52,8 @@ export default function FlagCard({ country, options, currentRound, totalRounds, 
       <div className="flag-container">
         <img
           className="flag-img"
-          src={country.flags.svg}
-          alt={country.flags.alt ?? `Flag of ${country.name.common}`}
+          src={getFlagUrl(country.cca2)}
+          alt={selected ? (country.flags.alt ?? `Flag of ${country.name.common}`) : 'Flag'}
         />
       </div>
       <p className="question-label">Which country is this?</p>
@@ -90,13 +85,7 @@ export default function FlagCard({ country, options, currentRound, totalRounds, 
           ))}
         </div>
       )}
-      <div className="game-footer">
-        <label className="auto-label">
-          <input type="checkbox" checked={autoNext} onChange={toggle} />
-          Auto continue
-        </label>
-        <button className="next-btn" onClick={nextAction ?? undefined} disabled={!nextAction || autoNext}>Next →</button>
-      </div>
+      <NextControls nextAction={nextAction} autoNext={autoNext} toggle={toggle} />
     </div>
   );
 }

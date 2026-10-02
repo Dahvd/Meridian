@@ -6,13 +6,13 @@ A living document for planning where Meridian goes. Update it freely as ideas ge
 
 ## What Meridian Is Now
 
-A geography mini-game hub with 9 game modes, region/difficulty filters, endless mode, and auto-continue. All client-side, no backend, no accounts.
+A geography mini-game hub with 8 game modes, region/difficulty filters, endless mode, and auto-continue. All client-side, no backend, no accounts.
 
 **Current games:**
 - Flag Guesser (multiple choice or hard/search)
 - Silhouette (guess country from shape)
 - Map Finder (click the country on the world map)
-- Progressive Clues (Wordle-style comparison grid)
+- Countryle (Wordle-style comparison grid)
 - Trivia (capital, language, currency questions)
 - Flag Grid (9-flag grid, find the right one)
 - Odd One Out (which country doesn't belong?)
@@ -58,7 +58,7 @@ Think: Duolingo's engagement loop, but for geography.
 Daily and weekly goals that push players into games they might not try:
 - "Identify 3 African countries on the map"
 - "Win a Higher or Lower round"
-- "Guess a country in Progressive Clues in under 5 tries"
+- "Guess a country in Countryle in under 5 tries"
 - "Unlock 5 new country cards in one session"
 - "Complete the daily challenge"
 
@@ -96,11 +96,6 @@ Instead of a flat level bar, your progress is visualized as a journey across a w
 - **Continent Sort** — drag countries into their correct continent bucket
 
 ### Medium-term
-- **GeoGuessr Clone** — dropped into a Street View location, guess where you are on the map
-  - Uses Google Street View API (costs money at scale) or Mapillary (free, less coverage)
-  - Single-player basic version: ~1 weekend of work with existing Leaflet setup
-  - Score by distance from actual location (Haversine formula)
-  - Multiplayer version: weeks of work
 - **Anthem Clip** — hear 5 seconds of a national anthem, guess the country
 - **Coat of Arms Quiz** — similar to flag guesser but with coats of arms
 - **Map Drawing** — drag outline of a country to its correct location on the map (hard, very satisfying)
@@ -144,12 +139,6 @@ Instead of a flat level bar, your progress is visualized as a journey across a w
 - [ ] Lobby system (invite link or random matchmaking)
 - [ ] Spectator mode for tournaments
 
-### Phase 5 — GeoGuessr Clone
-- [ ] Decide: Google Street View API vs Mapillary
-- [ ] Location database (curated or random)
-- [ ] Map pin + score-by-distance mechanic
-- [ ] Round timer
-- [ ] Multiplayer sync
 
 ---
 
@@ -183,7 +172,6 @@ Don't worry about monetization until there's a real daily active user base. Buil
 - Free accounts with optional paid Pro, or fully free forever?
 - Should country cards show a fun fact? Where do the facts come from?
 - Globe traversal — optional mode or shelve it completely?
-- GeoGuessr clone — build it as a separate game within Meridian or keep it out of scope?
 
 ---
 
@@ -196,4 +184,3 @@ Don't worry about monetization until there's a real daily active user base. Buil
 5. Leaderboards
 6. Quests
 7. Multiplayer battles
-8. GeoGuessr clone

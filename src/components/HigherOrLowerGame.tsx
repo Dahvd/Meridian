@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import type { Country } from '../types/country';
-import { shuffle } from '../helpers/countryHelpers';
+import { shuffle, getFlagUrl } from '../helpers/countryHelpers';
 import { useNextStep } from '../hooks/useNextStep';
 import countriesData from '../data/countries.json';
+import NextControls from './NextControls';
 
 const FALLBACK = (countriesData as unknown as Country[]).filter(c => c.population > 0);
 
@@ -22,19 +23,15 @@ interface Props {
 }
 
 export default function HigherOrLowerGame({ country, pool, currentRound, totalRounds, onGuess, onGiveUp }: Props) {
-  const [other, setOther] = useState<Country | null>(null);
   const [result, setResult] = useState<'correct' | 'incorrect' | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const { autoNext, toggle, nextAction, schedule, reset } = useNextStep();
+  const { autoNext, toggle, nextAction, schedule } = useNextStep();
   const progress = ((currentRound + 1) / totalRounds) * 100;
 
-  useEffect(() => {
-    setResult(null);
-    setRevealed(false);
-    reset();
+  const other = useMemo(() => {
     const source = pool.filter(c => c.population > 0 && c.cca2 !== country.cca2);
     const candidates = source.length >= 3 ? source : FALLBACK.filter(c => c.cca2 !== country.cca2);
-    setOther(shuffle(candidates)[0]);
+    return shuffle(candidates)[0] ?? null;
   }, [country, pool]);
 
   function pick(chosen: 'left' | 'right') {
@@ -66,7 +63,7 @@ export default function HigherOrLowerGame({ country, pool, currentRound, totalRo
           onClick={() => pick('left')}
           disabled={!!result}
         >
-          <img src={country.flags.svg} alt="" className="hol-flag" />
+          <img src={getFlagUrl(country.cca2)} alt="" className="hol-flag" />
           <span className="hol-name">{country.name.common}</span>
           {revealed && <span className="hol-pop">{fmt(country.population)}</span>}
         </button>
@@ -78,18 +75,12 @@ export default function HigherOrLowerGame({ country, pool, currentRound, totalRo
           onClick={() => pick('right')}
           disabled={!!result}
         >
-          <img src={other.flags.svg} alt="" className="hol-flag" />
+          <img src={getFlagUrl(other.cca2)} alt="" className="hol-flag" />
           <span className="hol-name">{other.name.common}</span>
           {revealed && <span className="hol-pop">{fmt(other.population)}</span>}
         </button>
       </div>
-      <div className="game-footer">
-        <label className="auto-label">
-          <input type="checkbox" checked={autoNext} onChange={toggle} />
-          Auto continue
-        </label>
-        <button className="next-btn" onClick={nextAction ?? undefined} disabled={!nextAction || autoNext}>Next →</button>
-      </div>
+      <NextControls nextAction={nextAction} autoNext={autoNext} toggle={toggle} />
     </div>
   );
 }

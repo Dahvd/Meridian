@@ -5,6 +5,9 @@
 import { writeFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import {
+  getText, firstSentence, norm, cleanNamedPlace, cleanSymbolText,
+} from './factbookText';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -66,41 +69,6 @@ async function withConcurrency<T>(tasks: (() => Promise<T>)[], limit: number): P
   };
   await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
   return results;
-}
-
-function getText(obj: unknown): string | undefined {
-  if (obj && typeof obj === 'object' && 'text' in (obj as object)) {
-    const t = (obj as { text: unknown }).text;
-    return typeof t === 'string' ? t : undefined;
-  }
-  return undefined;
-}
-
-function firstSentence(text: string): string {
-  const m = text.match(/^[^.!?]*[.!?]/);
-  return m ? m[0].trim() : text.split('\n')[0].trim();
-}
-
-// Decode the handful of HTML entities that appear in factbook JSON strings
-const HTML_ENTITIES: Record<string, string> = {
-  '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': "'",
-  '&nbsp;': ' ', '&ocirc;': 'ô', '&eacute;': 'é', '&egrave;': 'è',
-  '&agrave;': 'à', '&iuml;': 'ï', '&uuml;': 'ü', '&ouml;': 'ö',
-  '&auml;': 'ä', '&ntilde;': 'ñ', '&ccedil;': 'ç',
-};
-function decodeHtml(s: string): string {
-  return s.replace(/&[a-z]+;/gi, (m) => HTML_ENTITIES[m.toLowerCase()] ?? '');
-}
-
-// Lowercase, decode HTML, strip diacritics + punctuation, collapse spaces
-function norm(name: string): string {
-  return decodeHtml(name)
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
 }
 
 // ─────────────────────────────────────────────
@@ -297,9 +265,9 @@ async function buildFactbookMap(): Promise<Map<string, FactbookEntry>> {
     const facts: FactbookFacts = {};
 
     const hp = getText(elev['highest point']);
-    if (hp) facts.highestPoint = hp;
+    if (hp) { const cleaned = cleanNamedPlace(hp); if (cleaned) facts.highestPoint = cleaned; }
     const lp = getText(elev['lowest point']);
-    if (lp) facts.lowestPoint = lp;
+    if (lp) { const cleaned = cleanNamedPlace(lp); if (cleaned) facts.lowestPoint = cleaned; }
 
     const climate = getText(geo['Climate']);
     if (climate) facts.climate = firstSentence(climate);
@@ -309,7 +277,7 @@ async function buildFactbookMap(): Promise<Map<string, FactbookEntry>> {
     if (terrain) facts.terrain = firstSentence(terrain);
 
     const natSym = getText(gov['National symbol(s)']);
-    if (natSym) facts.nationalSymbols = natSym;
+    if (natSym) facts.nationalSymbols = cleanSymbolText(natSym);
     const indep = getText(gov['Independence']);
     if (indep) facts.independenceDate = indep;
 

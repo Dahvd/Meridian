@@ -1,7 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import type { Country } from '../types/country';
+import { getFlagUrl } from '../helpers/countryHelpers';
 import SearchInput from './SearchInput';
-import CountryMiniMap from './CountryMiniMap';
+
+// Leaflet is a sizeable dependency — only load it once a round actually ends.
+const CountryMiniMap = lazy(() => import('./CountryMiniMap'));
 
 const CLUES_EVERY = 3;
 
@@ -125,15 +128,6 @@ export default function ProgressiveGame({ country, pool, onGuess, onGiveUp }: Pr
   }, [rows]);
 
   useEffect(() => {
-    setRows([]);
-    setDone(false);
-    setRevealed(false);
-    setWinner(null);
-    setGuessedCodes(new Set());
-    setWiki(null);
-  }, [country.cca2]);
-
-  useEffect(() => {
     if (!done && !revealed) return;
     fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(country.name.common)}`)
       .then(r => r.ok ? r.json() : null)
@@ -174,12 +168,13 @@ export default function ProgressiveGame({ country, pool, onGuess, onGiveUp }: Pr
   return (
     <div className="card">
       <div className="progress-header">
-        <span className="round-label">Progressive Clues</span>
+        <span className="round-label">Countryle</span>
         {!done && !revealed && (
           <button className="give-up-btn" onClick={() => setRevealed(true)}>Give up</button>
         )}
       </div>
 
+      <div className="prog-table">
       <div className="prog-header-row">
         <span className="prog-col-name" />
         <span className="prog-col-label">Region</span>
@@ -199,7 +194,7 @@ export default function ProgressiveGame({ country, pool, onGuess, onGiveUp }: Pr
           return (
             <div key={i} className="prog-row">
               <span className="prog-country-name">
-                <img src={row.country.flags.svg} alt="" className="prog-flag" />
+                <img src={getFlagUrl(row.country.cca2)} alt="" className="prog-flag" />
                 <span>{row.country.name.common}</span>
               </span>
               <div className="prog-tile" style={{ background: regionBg }}>
@@ -230,7 +225,7 @@ export default function ProgressiveGame({ country, pool, onGuess, onGiveUp }: Pr
           <div className="prog-divider" />
           <div className="prog-row">
             <span className="prog-country-name">
-              <img src={country.flags.svg} alt="" className="prog-flag" />
+              <img src={getFlagUrl(country.cca2)} alt="" className="prog-flag" />
               <span>{country.name.common}</span>
             </span>
             <div className="prog-tile" style={{ background: 'var(--correct)' }}>
@@ -249,10 +244,15 @@ export default function ProgressiveGame({ country, pool, onGuess, onGiveUp }: Pr
               <span className="prog-tile-text">{country.borders.length}</span>
             </div>
           </div>
+        </>
+      )}
+      </div>
 
+      {(done || revealed) && (
+        <>
           <div className="prog-about">
             <div className="prog-about-header">
-              <img src={country.flags.svg} alt={`Flag of ${country.name.common}`} className="prog-about-flag" />
+              <img src={getFlagUrl(country.cca2)} alt={`Flag of ${country.name.common}`} className="prog-about-flag" />
               <div className="prog-about-names">
                 <p className="prog-about-country">{country.name.common}</p>
                 {country.name.official !== country.name.common && (
@@ -277,7 +277,9 @@ export default function ProgressiveGame({ country, pool, onGuess, onGiveUp }: Pr
                 Wikipedia ↗
               </a>
             )}
-            <CountryMiniMap country={country} />
+            <Suspense fallback={<div className="status-screen"><div className="spinner" /></div>}>
+              <CountryMiniMap country={country} />
+            </Suspense>
             <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="prog-link-btn">
               Google Maps ↗
             </a>

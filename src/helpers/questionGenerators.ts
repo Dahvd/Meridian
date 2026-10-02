@@ -1,5 +1,4 @@
 import type { Country, EnrichedCountry } from '../types/country';
-import enrichedData from '../data/countriesEnriched.json';
 import { shuffle } from './countryHelpers';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -14,8 +13,18 @@ export type FactQuestion = {
 
 // ── Module-level data ─────────────────────────────────────────────────────────
 
-const ALL_ENRICHED = enrichedData as unknown as EnrichedCountry[];
-const ENRICHED_BY_CCA2 = new Map(ALL_ENRICHED.map(c => [c.cca2, c]));
+// countriesEnriched.json (~544KB) is only needed for Trivia, so it's loaded on
+// demand instead of bundled into the main chunk. Cached after the first call.
+let enrichedByCca2Promise: Promise<Map<string, EnrichedCountry>> | null = null;
+
+function loadEnrichedByCca2(): Promise<Map<string, EnrichedCountry>> {
+  if (!enrichedByCca2Promise) {
+    enrichedByCca2Promise = import('../data/countriesEnriched.json').then(
+      mod => new Map((mod.default as unknown as EnrichedCountry[]).map(c => [c.cca2, c]))
+    );
+  }
+  return enrichedByCca2Promise;
+}
 
 // ── Shared distractor helper ──────────────────────────────────────────────────
 
@@ -44,7 +53,7 @@ function pickDistractors(
 
 // ── 1. Capital ────────────────────────────────────────────────────────────────
 
-function buildCapital(
+export function buildCapital(
   country: EnrichedCountry,
   pool: EnrichedCountry[],
   difficulty: 'normal' | 'hard',
@@ -86,7 +95,7 @@ function buildCapital(
 
 // ── 2. Region ─────────────────────────────────────────────────────────────────
 
-function buildRegion(
+export function buildRegion(
   country: EnrichedCountry,
   pool: EnrichedCountry[],
 ): FactQuestion | null {
@@ -106,7 +115,7 @@ function buildRegion(
 
 // ── 3. TLD ────────────────────────────────────────────────────────────────────
 
-function buildTld(
+export function buildTld(
   country: EnrichedCountry,
   pool: EnrichedCountry[],
   difficulty: 'normal' | 'hard',
@@ -138,7 +147,7 @@ function buildTld(
 
 // ── 4. Driving Side ───────────────────────────────────────────────────────────
 
-function buildDrivingSide(
+export function buildDrivingSide(
   country: EnrichedCountry,
   pool: EnrichedCountry[],
 ): FactQuestion | null {
@@ -169,7 +178,7 @@ function superlativeValue(c: EnrichedCountry, variant: SuperlativeVariant): numb
   return c.borders?.length ?? 0;
 }
 
-function buildSuperlative(
+export function buildSuperlative(
   country: EnrichedCountry,
   pool: EnrichedCountry[],
   variant: SuperlativeVariant,
@@ -203,7 +212,7 @@ function buildSuperlative(
 
 // ── 6. Highest Point ──────────────────────────────────────────────────────────
 
-function buildHighestPoint(
+export function buildHighestPoint(
   country: EnrichedCountry,
   pool: EnrichedCountry[],
   difficulty: 'normal' | 'hard',
@@ -239,7 +248,7 @@ function parseYear(text: string): string | null {
   return m ? m[1] : null;
 }
 
-function buildIndependence(
+export function buildIndependence(
   country: EnrichedCountry,
 ): FactQuestion | null {
   const text = country.facts?.independenceDate;
@@ -273,7 +282,7 @@ function buildIndependence(
 
 // ── 8. National Symbol ────────────────────────────────────────────────────────
 
-function buildNationalSymbol(
+export function buildNationalSymbol(
   country: EnrichedCountry,
   pool: EnrichedCountry[],
   difficulty: 'normal' | 'hard',
@@ -325,7 +334,7 @@ const BUILDERS: Builder[] = [
   buildNationalSymbol,
 ];
 
-function buildOne(
+export function buildOne(
   country: EnrichedCountry,
   pool: EnrichedCountry[],
   difficulty: 'normal' | 'hard',
@@ -348,12 +357,13 @@ function buildOne(
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /** Build one fact question per country, cycling through all 8 types. */
-export function buildFactQuestions(
+export async function buildFactQuestions(
   countries: Country[],
   difficulty: 'normal' | 'hard' = 'normal',
-): FactQuestion[] {
+): Promise<FactQuestion[]> {
+  const enrichedByCca2 = await loadEnrichedByCca2();
   const enriched = countries
-    .map(c => ENRICHED_BY_CCA2.get(c.cca2))
+    .map(c => enrichedByCca2.get(c.cca2))
     .filter((c): c is EnrichedCountry => c !== undefined);
 
   return enriched.map((country, i) =>
@@ -362,9 +372,10 @@ export function buildFactQuestions(
 }
 
 /** Count how many countries in a pool satisfy each question type. */
-export function eligibleCounts(countries: Country[]): Record<string, number> {
+export async function eligibleCounts(countries: Country[]): Promise<Record<string, number>> {
+  const enrichedByCca2 = await loadEnrichedByCca2();
   const pool = countries
-    .map(c => ENRICHED_BY_CCA2.get(c.cca2))
+    .map(c => enrichedByCca2.get(c.cca2))
     .filter((c): c is EnrichedCountry => c !== undefined);
 
   return {

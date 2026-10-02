@@ -1,4 +1,5 @@
 import type { Guess, GameType } from '../hooks/useGameLogic';
+import { getFlagUrl } from '../helpers/countryHelpers';
 
 interface Props {
   guesses: Guess[];
@@ -24,8 +25,7 @@ const GAME_LABELS: Record<GameType, string> = {
   'higher-or-lower': 'Higher or Lower',
   'silhouette': 'Silhouette',
   'odd-one-out': 'Odd One Out',
-  'progressive': 'Progressive Clues',
-  'memory': 'Memory',
+  'progressive': 'Countryle',
 };
 
 export default function Results({ guesses, gameType, endless, onPlayAgain, onGoHome }: Props) {
@@ -53,7 +53,7 @@ export default function Results({ guesses, gameType, endless, onPlayAgain, onGoH
           <div key={i} className={`result-item ${g.correct ? 'correct' : 'incorrect'}`}>
             <img
               className="result-flag"
-              src={g.answer.flags.svg}
+              src={getFlagUrl(g.answer.cca2)}
               alt={`Flag of ${g.answer.name.common}`}
             />
             <div className="result-info">

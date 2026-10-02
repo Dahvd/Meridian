@@ -1,18 +1,27 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useFetchRandomizedCountries } from './hooks/useFetchRandomizedCountries';
 import { useGameLogic } from './hooks/useGameLogic';
 import HomeScreen from './components/HomeScreen';
 import FlagCard from './components/FlagCard';
 import TriviaCard from './components/TriviaCard';
-import MapGame from './components/MapGame';
 import FlagGridGame from './components/FlagGridGame';
 import HigherOrLowerGame from './components/HigherOrLowerGame';
-import SilhouetteGame from './components/SilhouetteGame';
 import OddOneOutGame from './components/OddOneOutGame';
 import ProgressiveGame from './components/ProgressiveGame';
-import MemoryGame from './components/MemoryGame';
 import Results from './components/Results';
 import FeedbackWidget from './components/FeedbackWidget';
+
+// Leaflet is a sizeable dependency — only load it for the game modes that need it.
+const MapGame = lazy(() => import('./components/MapGame'));
+const SilhouetteGame = lazy(() => import('./components/SilhouetteGame'));
+
+function GameLoading() {
+  return (
+    <div className="status-screen">
+      <div className="spinner" />
+    </div>
+  );
+}
 
 export default function App() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -49,6 +58,7 @@ export default function App() {
           <button className="back-home-btn" onClick={goHome}>⌂</button>
           {gameType === 'flag' && options.length > 0 && (
             <FlagCard
+              key={currentRound}
               country={currentCountry}
               options={options}
               currentRound={currentRound}
@@ -61,6 +71,7 @@ export default function App() {
           )}
           {gameType === 'trivia' && currentFactQuestion && (
             <TriviaCard
+              key={currentRound}
               question={currentFactQuestion}
               currentRound={currentRound}
               totalRounds={totalRounds}
@@ -71,17 +82,20 @@ export default function App() {
             />
           )}
           {gameType === 'map' && (
-            <MapGame
-              country={currentCountry}
-              currentRound={currentRound}
-              totalRounds={totalRounds}
-              difficulty={difficulty}
-              onGuess={handleGuess}
-              onGiveUp={giveUp}
-            />
+            <Suspense fallback={<GameLoading />}>
+              <MapGame
+                country={currentCountry}
+                currentRound={currentRound}
+                totalRounds={totalRounds}
+                difficulty={difficulty}
+                onGuess={handleGuess}
+                onGiveUp={giveUp}
+              />
+            </Suspense>
           )}
           {gameType === 'flag-grid' && (
             <FlagGridGame
+              key={currentRound}
               country={currentCountry}
               pool={pool}
               currentRound={currentRound}
@@ -92,6 +106,7 @@ export default function App() {
           )}
           {gameType === 'higher-or-lower' && (
             <HigherOrLowerGame
+              key={currentRound}
               country={currentCountry}
               pool={pool}
               currentRound={currentRound}
@@ -101,18 +116,22 @@ export default function App() {
             />
           )}
           {gameType === 'silhouette' && (
-            <SilhouetteGame
-              country={currentCountry}
-              options={options}
-              currentRound={currentRound}
-              totalRounds={totalRounds}
-              difficulty={difficulty}
-              onGuess={handleGuess}
-              onGiveUp={giveUp}
-            />
+            <Suspense fallback={<GameLoading />}>
+              <SilhouetteGame
+                key={currentRound}
+                country={currentCountry}
+                options={options}
+                currentRound={currentRound}
+                totalRounds={totalRounds}
+                difficulty={difficulty}
+                onGuess={handleGuess}
+                onGiveUp={giveUp}
+              />
+            </Suspense>
           )}
           {gameType === 'odd-one-out' && (
             <OddOneOutGame
+              key={currentRound}
               country={currentCountry}
               pool={pool}
               currentRound={currentRound}
@@ -123,6 +142,7 @@ export default function App() {
           )}
           {gameType === 'progressive' && options.length > 0 && (
             <ProgressiveGame
+              key={currentRound}
               country={currentCountry}
               options={options}
               pool={pool}
@@ -130,12 +150,6 @@ export default function App() {
               totalRounds={totalRounds}
               onGuess={handleGuess}
               onGiveUp={giveUp}
-            />
-          )}
-          {gameType === 'memory' && (
-            <MemoryGame
-              onFinish={() => goHome()}
-              onGiveUp={() => giveUp()}
             />
           )}
         </div>

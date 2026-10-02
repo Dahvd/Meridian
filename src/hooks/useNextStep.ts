@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 const KEY = 'meridian-auto-next';
 
@@ -10,19 +10,22 @@ export function useNextStep() {
   const [nextAction, setNextAction] = useState<(() => void) | null>(null);
   const autoNextRef = useRef(autoNext);
   const nextActionRef = useRef<(() => void) | null>(null);
-  autoNextRef.current = autoNext;
-  nextActionRef.current = nextAction;
 
-  function schedule(delay: number, cb: () => void) {
+  useEffect(() => {
+    autoNextRef.current = autoNext;
+    nextActionRef.current = nextAction;
+  }, [autoNext, nextAction]);
+
+  const schedule = useCallback((delay: number, cb: () => void) => {
     if (autoNextRef.current) setTimeout(cb, delay);
     else setNextAction(() => cb);
-  }
+  }, []);
 
-  function reset() { setNextAction(null); }
+  const reset = useCallback(() => setNextAction(null), []);
 
-  function toggle() {
-    const val = !autoNext;
-    try { localStorage.setItem(KEY, String(val)); } catch {}
+  const toggle = useCallback(() => {
+    const val = !autoNextRef.current;
+    try { localStorage.setItem(KEY, String(val)); } catch { /* localStorage unavailable */ }
     setAutoNextState(val);
     // If turning ON with a pending action, fire it immediately
     if (val && nextActionRef.current) {
@@ -30,7 +33,7 @@ export function useNextStep() {
       setNextAction(null);
       action();
     }
-  }
+  }, []);
 
   return { autoNext, toggle, nextAction, schedule, reset };
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import type { Country } from '../types/country';
 import { getAnswerOptions, shuffle } from '../helpers/countryHelpers';
 import { buildFactQuestions, type FactQuestion } from '../helpers/questionGenerators';
@@ -13,7 +13,7 @@ export type Guess = {
 };
 
 export type Difficulty = 'normal' | 'hard';
-export type GameType = 'flag' | 'trivia' | 'map' | 'flag-grid' | 'higher-or-lower' | 'silhouette' | 'odd-one-out' | 'progressive' | 'memory';
+export type GameType = 'flag' | 'trivia' | 'map' | 'flag-grid' | 'higher-or-lower' | 'silhouette' | 'odd-one-out' | 'progressive';
 
 type GameState = 'home' | 'playing' | 'results';
 
@@ -35,7 +35,6 @@ export function useGameLogic(allCountries: Country[]) {
   const [totalRounds, setTotalRounds] = useState(10);
   const [currentRound, setCurrentRound] = useState(0);
   const [countryIndex, setCountryIndex] = useState(0);
-  const [options, setOptions] = useState<Country[]>([]);
   const [guesses, setGuesses] = useState<Guess[]>([]);
   const [factQuestions, setFactQuestions] = useState<FactQuestion[]>([]);
   const [lastSettings, setLastSettings] = useState<LastSettings | null>(null);
@@ -43,13 +42,14 @@ export function useGameLogic(allCountries: Country[]) {
   const [endless, setEndless] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const options = useMemo(() => {
     if (gameState === 'playing' && countries.length > 0) {
-      setOptions(getAnswerOptions(countries, countryIndex));
+      return getAnswerOptions(countries, countryIndex);
     }
+    return [];
   }, [gameState, countryIndex, countries]);
 
-  function startGame(
+  async function startGame(
     rounds: number,
     diff: Difficulty,
     type: GameType,
@@ -72,7 +72,7 @@ export function useGameLogic(allCountries: Country[]) {
     const gameRounds = type === 'progressive' ? 1 : endlessMode ? pool.length : Math.min(rounds, pool.length);
     const slice = pool.slice(0, gameRounds);
 
-    const factQs = type === 'trivia' ? buildFactQuestions(slice, diff) : [];
+    const factQs = type === 'trivia' ? await buildFactQuestions(slice, diff) : [];
 
     setLastSettings({ rounds, diff, type, region, endless: endlessMode, minPop });
     setTotalRounds(gameRounds);

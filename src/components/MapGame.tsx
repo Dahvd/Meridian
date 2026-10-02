@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNextStep } from '../hooks/useNextStep';
+import NextControls from './NextControls';
 import { MapContainer, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -124,7 +125,7 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
     if (geoLayerRef.current) {
       geoLayerRef.current.setStyle(() => STYLE_DEFAULT);
     }
-  }, [country.cca2]);
+  }, [country.cca2, reset]);
 
   function handleFeatureClick(feature: GeoFeature) {
     if (guessedRef.current) return;
@@ -213,13 +214,7 @@ export default function MapGame({ country, currentRound, totalRounds, onGuess, o
           )}
         </MapContainer>
       </div>
-      <div className="game-footer">
-        <label className="auto-label">
-          <input type="checkbox" checked={autoNext} onChange={toggle} />
-          Auto continue
-        </label>
-        <button className="next-btn" onClick={nextAction ?? undefined} disabled={!nextAction || autoNext}>Next →</button>
-      </div>
+      <NextControls nextAction={nextAction} autoNext={autoNext} toggle={toggle} />
     </div>
   );
 }
