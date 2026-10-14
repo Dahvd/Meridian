@@ -314,9 +314,68 @@ export function buildNationalSymbol(
   };
 }
 
+// ── 9. Currency ───────────────────────────────────────────────────────────────
+
+function sharesStem(a: string, b: string, minLen = 5): boolean {
+  return a.length >= minLen && b.length >= minLen && a.slice(0, minLen) === b.slice(0, minLen);
+}
+
+/**
+ * True if a currency name would give the country away by name/demonym resemblance
+ * (e.g. "Swiss franc" -> Switzerland, "Icelandic króna" -> Iceland).
+ */
+function isCurrencyGiveaway(currencyName: string, country: EnrichedCountry): boolean {
+  const lower = currencyName.toLowerCase();
+  const name = country.name.common.toLowerCase();
+  const demonym = country.demonyms?.eng?.m?.toLowerCase() ?? '';
+  const nameWords = name.split(/[\s-]+/);
+  const textWords = lower.split(/\s+/);
+  return lower.includes(name)
+    || (demonym.length > 3 && lower.includes(demonym))
+    || (lower.length > 3 && name.includes(lower))
+    || textWords.some(w => w.length >= 3 && name.includes(w))
+    || textWords.some(tw => nameWords.some(nw => sharesStem(tw, nw)));
+}
+
+export function buildCurrency(
+  country: EnrichedCountry,
+  pool: EnrichedCountry[],
+  difficulty: 'normal' | 'hard',
+): FactQuestion | null {
+  const entries = Object.entries(country.currencies ?? {});
+  const candidate = entries.find(([, { name }]) => !isCurrencyGiveaway(name, country));
+  if (!candidate) return null;
+  const [, { name: currencyName }] = candidate;
+
+  const ownNames = new Set(entries.map(([, v]) => v.name));
+  const sameRegionNames = pool
+    .filter(c => c.region === country.region && c.cca2 !== country.cca2)
+    .flatMap(c => Object.values(c.currencies ?? {}).map(v => v.name))
+    .filter(n => !ownNames.has(n));
+  const globalNames = pool
+    .filter(c => c.cca2 !== country.cca2)
+    .flatMap(c => Object.values(c.currencies ?? {}).map(v => v.name))
+    .filter(n => !ownNames.has(n));
+
+  const distractors = pickDistractors(
+    currencyName, 3,
+    difficulty === 'hard' ? sameRegionNames : [],
+    globalNames,
+  );
+  if (distractors.length < 3) return null;
+
+  return {
+    prompt: `What is the official currency of ${country.name.common}?`,
+    category: 'Currency',
+    options: shuffle([currencyName, ...distractors]),
+    correctAnswer: currencyName,
+    country,
+  };
+}
+
 // ── Builder cycle ─────────────────────────────────────────────────────────────
 
-// 8-slot cycle keeps consecutive questions varied; a failed slot falls through.
+// 9-slot cycle keeps consecutive questions varied; a failed slot falls through.
 type Builder = (
   c: EnrichedCountry,
   pool: EnrichedCountry[],
@@ -332,6 +391,7 @@ const BUILDERS: Builder[] = [
   buildHighestPoint,
   (c) => buildIndependence(c),
   buildNationalSymbol,
+  buildCurrency,
 ];
 
 export function buildOne(
@@ -390,5 +450,8 @@ export async function eligibleCounts(countries: Country[]): Promise<Record<strin
       return !!t && parseYear(t) !== null;
     }).length,
     nationalSymbol: pool.filter(c => !!c.facts?.nationalSymbols).length,
+    currency: pool.filter(c =>
+      Object.values(c.currencies ?? {}).some(v => !isCurrencyGiveaway(v.name, c))
+    ).length,
   };
 }

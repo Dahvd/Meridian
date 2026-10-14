@@ -9,6 +9,7 @@ import {
   buildHighestPoint,
   buildIndependence,
   buildNationalSymbol,
+  buildCurrency,
   buildOne,
 } from './questionGenerators';
 
@@ -159,6 +160,59 @@ describe('buildNationalSymbol', () => {
     const q = buildNationalSymbol(c, pool, 'normal');
     expect(q).not.toBeNull();
     expect(new Set(q!.options).size).toBe(4);
+  });
+});
+
+describe('buildCurrency', () => {
+  it('returns null when the only currency is a giveaway', () => {
+    const c = makeCountry({
+      cca2: 'AA',
+      name: { common: 'Switzerland', official: 'Switzerland' },
+      demonyms: { eng: { f: 'Swiss', m: 'Swiss' } },
+      currencies: { CHF: { name: 'Swiss franc', symbol: 'Fr' } },
+    });
+    const pool = [
+      c,
+      makeCountry({ cca2: 'BB', currencies: { EUR: { name: 'Euro', symbol: '€' } } }),
+      makeCountry({ cca2: 'CC', currencies: { USD: { name: 'US dollar', symbol: '$' } } }),
+      makeCountry({ cca2: 'DD', currencies: { JPY: { name: 'Yen', symbol: '¥' } } }),
+    ];
+    expect(buildCurrency(c, pool, 'normal')).toBeNull();
+  });
+
+  it('returns null when fewer than 3 distractor currencies exist', () => {
+    const c = makeCountry({ cca2: 'AA', currencies: { THB: { name: 'Baht', symbol: '฿' } } });
+    expect(buildCurrency(c, [c], 'normal')).toBeNull();
+  });
+
+  it('excludes the country\'s own currencies from distractor options', () => {
+    const c = makeCountry({ cca2: 'AA', currencies: { THB: { name: 'Baht', symbol: '฿' } } });
+    const pool = [
+      c,
+      makeCountry({ cca2: 'BB', currencies: { THB: { name: 'Baht', symbol: '฿' } } }), // shares currency
+      makeCountry({ cca2: 'CC', currencies: { MYR: { name: 'Ringgit', symbol: 'RM' } } }),
+      makeCountry({ cca2: 'DD', currencies: { IDR: { name: 'Rupiah', symbol: 'Rp' } } }),
+      makeCountry({ cca2: 'EE', currencies: { VND: { name: 'Dong', symbol: '₫' } } }),
+    ];
+    const q = buildCurrency(c, pool, 'normal');
+    expect(q).not.toBeNull();
+    expect(q!.correctAnswer).toBe('Baht');
+    expect(q!.options).not.toContain(undefined);
+    expect(new Set(q!.options).size).toBe(4);
+  });
+
+  it('prefers same-region distractors on hard mode', () => {
+    const c = makeCountry({ cca2: 'AA', region: 'Europe', currencies: { AAA: { name: 'Currency A', symbol: 'a' } } });
+    const sameRegion = [
+      makeCountry({ cca2: 'BB', region: 'Europe', currencies: { BBB: { name: 'Currency B', symbol: 'b' } } }),
+      makeCountry({ cca2: 'CC', region: 'Europe', currencies: { CCC: { name: 'Currency C', symbol: 'c' } } }),
+      makeCountry({ cca2: 'DD', region: 'Europe', currencies: { DDD: { name: 'Currency D', symbol: 'd' } } }),
+    ];
+    const global = [makeCountry({ cca2: 'EE', region: 'Asia', currencies: { EEE: { name: 'Currency E', symbol: 'e' } } })];
+    const q = buildCurrency(c, [c, ...sameRegion, ...global], 'hard');
+    expect(q).not.toBeNull();
+    expect(q!.options).toEqual(expect.arrayContaining(['Currency A', 'Currency B', 'Currency C', 'Currency D']));
+    expect(q!.options).not.toContain('Currency E');
   });
 });
 

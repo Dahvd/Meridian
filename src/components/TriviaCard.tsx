@@ -25,6 +25,7 @@ const CATEGORY_CLASSES: Record<string, string> = {
   Geography: 'trivia-badge-green',
   History: 'trivia-badge-amber',
   Culture: 'trivia-badge-orange',
+  Currency: 'trivia-badge-purple',
 };
 
 // Use 1-column layout when options are long strings (mountains, symbols, etc.)
